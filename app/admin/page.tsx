@@ -7,7 +7,6 @@ import { z } from 'zod';
 import { songCreateSchema } from '@/lib/validators';
 import Link from 'next/link';
 import SubmitButton from '@/components/SubmitButton';
-import { useToast } from '@/components/toast';
 import { createClient } from '@supabase/supabase-js';
 import { eq, desc } from 'drizzle-orm';
 
@@ -178,7 +177,7 @@ function AdminSongRow({ song, tags, selectedTagIds, requestUpload, updateSong, d
         </div>
         <Link className="px-3 py-1.5 rounded-md border border-slate-300" href={`/api/songs/${song.id}`}>Edit API</Link>
       </div>
-      <form action={async (fd: FormData) => { await updateSong(fd); }} className="flex flex-wrap items-center gap-2" aria-label="Update song">
+      <form action={updateSong} className="flex flex-wrap items-center gap-2" aria-label="Update song">
           <input type="hidden" name="id" value={song.id} />
           <input name="title" defaultValue={song.title} className="rounded-md border border-slate-300 px-2 py-1 text-sm" />
           <select name="status" defaultValue={song.status} className="rounded-md border border-slate-300 px-2 py-1 text-sm">
@@ -190,7 +189,7 @@ function AdminSongRow({ song, tags, selectedTagIds, requestUpload, updateSong, d
           </select>
         <SubmitButton className="px-3 py-1.5 rounded-md border border-slate-300 hover:bg-slate-50 active:scale-95 transition" pendingText="Saving..." ariaLabel="Save changes">Save</SubmitButton>
       </form>
-      <form action={async (fd: FormData) => { await requestUpload(fd); }} className="flex flex-wrap items-center gap-2" aria-label="Upload audio and cover">
+      <form action={requestUpload} className="flex flex-wrap items-center gap-2" aria-label="Upload audio and cover">
         <input type="hidden" name="songId" value={song.id} />
         <div className="flex items-center gap-1 flex-wrap">
           {tags.map(t => (
@@ -204,7 +203,7 @@ function AdminSongRow({ song, tags, selectedTagIds, requestUpload, updateSong, d
         <input className="text-sm" type="file" name="cover" accept="image/png,image/jpeg,image/webp" />
         <SubmitButton className="px-3 py-1.5 rounded-md bg-slate-900 text-white hover:bg-slate-800 active:scale-95 transition" pendingText="Uploading..." ariaLabel="Upload files">Upload</SubmitButton>
       </form>
-      <form action={async (fd: FormData) => { await deleteSong(fd); }} aria-label="Delete song">
+      <form action={deleteSong} aria-label="Delete song">
           <input type="hidden" name="id" value={song.id} />
           <SubmitButton className="px-3 py-1.5 rounded-md border border-red-300 text-red-700 hover:bg-red-50 active:scale-95 transition" pendingText="Deleting..." ariaLabel="Delete song">Delete</SubmitButton>
       </form>

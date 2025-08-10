@@ -4,7 +4,8 @@ INSERT INTO public.tags (name, slug, color, description) VALUES
   ('bass_update', 'bass-update', 'cyan', 'Bassline changes'),
   ('misc_changes', 'misc-changes', 'slate', 'Misc edits'),
   ('mixing', 'mixing', 'sky', 'Mixing pass'),
-  ('mastering', 'mastering', 'emerald', 'Mastering pass')
+  ('mastering', 'mastering', 'emerald', 'Mastering pass'),
+  ('drums_update', 'drums-update', 'rose', 'Drums changes')
 ON CONFLICT (slug) DO NOTHING;
 
 

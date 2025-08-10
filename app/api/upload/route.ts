@@ -30,25 +30,29 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
   }
-  const { fileName, contentType, fileSize, songId } = parsed.data;
+  const { fileName, contentType, fileSize, songId, kind } = parsed.data;
 
   const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
   // Normalize and hash filename to UUID-like path
   const ext = fileName.split('.').pop()?.toLowerCase() || 'bin';
-  const allowedExt = ['wav', 'aiff', 'aif', 'mp3', 'm4a'];
+  const allowedExt = kind === 'cover' ? ['png', 'jpg', 'jpeg', 'webp'] : ['wav', 'aiff', 'aif', 'mp3', 'm4a'];
   if (!allowedExt.includes(ext)) return NextResponse.json({ error: 'Unsupported type' }, { status: 400 });
 
-  const objectName = `${songId}/${crypto.randomUUID()}.${ext}`;
-  const bucket = 'audio-originals';
+  const objectName = kind === 'cover' ? `${songId}/cover.${ext}` : `${songId}/${crypto.randomUUID()}.${ext}`;
+  const bucket = kind === 'cover' ? 'audio-previews' : 'audio-originals';
 
   const { data, error } = await supabase.storage.from(bucket).createSignedUploadUrl(objectName);
   if (error || !data) {
     return NextResponse.json({ error: 'Failed to sign upload' }, { status: 500 });
   }
 
-  // Optimistically set audio_url so the app can show link; Edge Function will set preview later.
-  await db.update(songs).set({ audioUrl: objectName, updatedBy: session?.user?.id, updatedAt: new Date() }).where(eq(songs.id, songId));
+  // Optimistically set fields so the app can reflect immediately
+  if (kind === 'audio') {
+    await db.update(songs).set({ audioUrl: objectName, updatedBy: session?.user?.id, updatedAt: new Date() }).where(eq(songs.id, songId));
+  } else {
+    await db.update(songs).set({ previewUrl: objectName, updatedBy: session?.user?.id, updatedAt: new Date() }).where(eq(songs.id, songId));
+  }
 
   return NextResponse.json({
     url: data.signedUrl,

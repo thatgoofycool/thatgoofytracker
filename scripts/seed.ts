@@ -12,6 +12,7 @@ async function main() {
     { name: 'misc_changes', slug: 'misc-changes', color: 'slate' },
     { name: 'mixing', slug: 'mixing', color: 'sky' },
     { name: 'mastering', slug: 'mastering', color: 'emerald' },
+    { name: 'drums_update', slug: 'drums-update', color: 'rose' },
   ]).onConflictDoNothing();
   console.log('Seeded default tags');
 }

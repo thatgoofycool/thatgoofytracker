@@ -65,6 +65,28 @@ export default async function AdminPage() {
     const data = await res.json();
     // Now upload bytes using signed URL
     await fetch(data.url, { method: 'PUT', headers: { 'Content-Type': data.contentType }, body: file.stream() as any });
+
+    // Fallback: directly invoke edge function since Storage Triggers UI may not be available
+    try {
+      const supabaseUrl = process.env.SUPABASE_URL!;
+      const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+      if (supabaseUrl && serviceRole) {
+        const fnUrl = `${supabaseUrl.replace(/\/$/, '')}/functions/v1/generate-preview`;
+        const payload = {
+          type: 'INSERT',
+          table: 'storage.objects',
+          record: { bucket_id: data.bucket, name: data.path, size: Number(file.size), metadata: {} },
+        };
+        await fetch(fnUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${serviceRole}`,
+          },
+          body: JSON.stringify(payload),
+        });
+      }
+    } catch {}
     revalidatePath('/');
     revalidatePath('/admin');
   }
@@ -153,9 +175,25 @@ function AdminSongRow({ song, tags, selectedTagIds, requestUpload, updateSong, d
       </div>
       <div className="flex items-center gap-2">
         <Link className="px-3 py-1.5 rounded-md border border-slate-300" href={`/api/songs/${song.id}`}>Edit API</Link>
-        <form action={requestUpload} className="flex items-center gap-2" aria-label="Upload audio">
+        <form action={requestUpload} className="flex items-center gap-2" aria-label="Upload audio and cover">
           <input type="hidden" name="songId" value={song.id} />
-          <input className="text-sm" type="file" name="file" accept="audio/wav,audio/x-wav,audio/aiff,audio/x-aiff,audio/mpeg,audio/mp4,audio/x-m4a" required />
+          <select name="status" defaultValue={song.status} className="rounded-md border border-slate-300 px-2 py-1 text-sm">
+            <option value="draft">Draft</option>
+            <option value="in_progress">In Progress</option>
+            <option value="mixing">Mixing</option>
+            <option value="mastering">Mastering</option>
+            <option value="done">Done</option>
+          </select>
+          <div className="flex items-center gap-1">
+            {tags.map(t => (
+              <label key={t.id} className={`text-xs inline-flex items-center gap-1 border rounded-full px-2 py-1 tag-${t.color}`}>
+                <input type="checkbox" name="tagIds" value={t.id} defaultChecked={selectedTagIds.includes(t.id)} />
+                {t.name}
+              </label>
+            ))}
+          </div>
+          <input className="text-sm" type="file" name="file" accept="audio/wav,audio/x-wav,audio/aiff,audio/x-aiff,audio/mpeg,audio/mp4,audio/x-m4a,audio/m4a" required />
+          <input className="text-sm" type="file" name="cover" accept="image/png,image/jpeg,image/webp" />
           <button type="submit" className="px-3 py-1.5 rounded-md bg-slate-900 text-white">Upload</button>
         </form>
         <form action={updateSong} className="flex items-center gap-2" aria-label="Update song">

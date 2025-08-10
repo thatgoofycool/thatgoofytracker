@@ -23,5 +23,6 @@ body {
 .tag-amber { @apply bg-amber-100 text-amber-800 border border-amber-200; }
 .tag-slate { @apply bg-slate-100 text-slate-700 border border-slate-200; }
 .tag-sky { @apply bg-sky-100 text-sky-700 border border-sky-200; }
+.tag-rose { @apply bg-rose-100 text-rose-700 border border-rose-200; }
 
 

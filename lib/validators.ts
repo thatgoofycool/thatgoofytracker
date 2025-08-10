@@ -28,7 +28,7 @@ export const songUpdateSchema = songCreateSchema.partial().extend({ id: uuid });
 export const tagCreateSchema = z.object({
   name: z.string().min(1).max(40),
   slug,
-  color: z.enum(['emerald', 'violet', 'cyan', 'amber', 'slate', 'sky']),
+  color: z.enum(['emerald', 'violet', 'cyan', 'amber', 'slate', 'sky', 'rose']),
   description,
 });
 
@@ -40,8 +40,12 @@ export const assignTagsSchema = z.object({
 export const uploadRequestSchema = z.object({
   songId: uuid,
   fileName: z.string().min(3).max(200),
-  contentType: z.enum(['audio/wav', 'audio/x-wav', 'audio/aiff', 'audio/x-aiff', 'audio/mpeg', 'audio/mp4', 'audio/x-m4a']),
+  contentType: z.enum([
+    'audio/wav', 'audio/x-wav', 'audio/aiff', 'audio/x-aiff', 'audio/mpeg', 'audio/mp4', 'audio/x-m4a',
+    'image/jpeg', 'image/png', 'image/webp'
+  ]),
   fileSize: z.number().int().positive().max(200 * 1024 * 1024),
+  kind: z.enum(['audio', 'cover']).default('audio'),
 });
 
 export type PaginationQuery = z.infer<typeof paginationQuerySchema>;

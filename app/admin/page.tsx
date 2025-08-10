@@ -64,30 +64,12 @@ export default async function AdminPage() {
     });
     if (!res.ok) return;
     const data = await res.json();
-    // Now upload bytes using signed URL
-    await fetch(data.url, { method: 'PUT', headers: { 'Content-Type': data.contentType }, body: file.stream() as any });
-
-    // Fallback: directly invoke edge function since Storage Triggers UI may not be available
-    try {
-      const supabaseUrl = process.env.SUPABASE_URL!;
-      const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-      if (supabaseUrl && serviceRole) {
-        const fnUrl = `${supabaseUrl.replace(/\/$/, '')}/functions/v1/generate-preview`;
-        const payload = {
-          type: 'INSERT',
-          table: 'storage.objects',
-          record: { bucket_id: data.bucket, name: data.path, size: Number(file.size), metadata: {} },
-        };
-        await fetch(fnUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${serviceRole}`,
-          },
-          body: JSON.stringify(payload),
-        });
-      }
-    } catch {}
+    // Now upload bytes using signed URL without streaming through Server Action
+    await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/trigger-preview`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bucket: data.bucket, path: data.path, size: file.size })
+    });
     revalidatePath('/');
     revalidatePath('/admin');
   }

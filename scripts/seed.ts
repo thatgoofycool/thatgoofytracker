@@ -1,3 +1,7 @@
+import { config as loadEnv } from 'dotenv';
+// Load local env for CLI execution
+loadEnv({ path: '.env.local' });
+loadEnv();
 import { db, tags } from '@/lib/db';
 
 async function main() {

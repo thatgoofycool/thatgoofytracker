@@ -50,6 +50,11 @@ export async function POST(req: NextRequest) {
   // Optimistically set fields so the app can reflect immediately
   if (kind === 'audio') {
     await db.update(songs).set({ audioUrl: objectName, updatedBy: session?.user?.id, updatedAt: new Date() }).where(eq(songs.id, songId));
+  } else {
+    // Build public URL for cover in public bucket
+    const base = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
+    const publicUrl = `${base}/storage/v1/object/public/${bucket}/${objectName}`;
+    await db.update(songs).set({ coverUrl: publicUrl, updatedBy: session?.user?.id, updatedAt: new Date() }).where(eq(songs.id, songId));
   }
 
   return NextResponse.json({

@@ -120,9 +120,19 @@ export default async function Page({ searchParams }: { searchParams: Record<stri
                 ) : null}
               </div>
               <div className="w-full max-w-[420px]">
-                <Suspense fallback={<div className="h-[64px] w-full bg-slate-100 animate-pulse rounded-md" />}>
-                  <AudioPlayer previewUrl={song.previewUrl || undefined} waveform={song.waveformJson as any} title={song.title} />
-                </Suspense>
+                {song.previewUrl ? (
+                  <Suspense fallback={<div className="h-[64px] w-full bg-slate-100 animate-pulse rounded-md" />}>
+                    <AudioPlayer previewUrl={song.previewUrl || undefined} waveform={song.waveformJson as any} title={song.title} />
+                  </Suspense>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    { (song as any).coverUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={(song as any).coverUrl as string} alt="Cover art" className="w-16 h-16 object-cover rounded" />
+                    ) : null }
+                    <div className="text-sm text-slate-500">No preview available</div>
+                  </div>
+                )}
               </div>
             </div>
           </li>

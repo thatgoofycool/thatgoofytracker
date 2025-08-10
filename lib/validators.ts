@@ -41,7 +41,7 @@ export const uploadRequestSchema = z.object({
   songId: uuid,
   fileName: z.string().min(3).max(200),
   contentType: z.enum([
-    'audio/wav', 'audio/x-wav', 'audio/aiff', 'audio/x-aiff', 'audio/mpeg', 'audio/mp4', 'audio/x-m4a',
+    'audio/wav', 'audio/x-wav', 'audio/aiff', 'audio/x-aiff', 'audio/mpeg', 'audio/mp4', 'audio/x-m4a', 'audio/m4a',
     'image/jpeg', 'image/png', 'image/webp'
   ]),
   fileSize: z.number().int().positive().max(200 * 1024 * 1024),

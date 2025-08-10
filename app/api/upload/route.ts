@@ -32,7 +32,12 @@ export async function POST(req: NextRequest) {
   }
   const { fileName, contentType, fileSize, songId, kind } = parsed.data;
 
-  const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  const url = process.env.SUPABASE_URL || '';
+  const service = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  if (!url || !service) {
+    return NextResponse.json({ error: 'Server misconfigured: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY missing' }, { status: 500 });
+  }
+  const supabase = createClient(url, service);
 
   // Normalize and hash filename to UUID-like path
   const ext = fileName.split('.').pop()?.toLowerCase() || 'bin';
@@ -42,28 +47,32 @@ export async function POST(req: NextRequest) {
   const objectName = kind === 'cover' ? `${songId}/cover.${ext}` : `${songId}/${crypto.randomUUID()}.${ext}`;
   const bucket = kind === 'cover' ? 'audio-previews' : 'audio-originals';
 
-  const { data, error } = await supabase.storage.from(bucket).createSignedUploadUrl(objectName);
-  if (error || !data) {
-    return NextResponse.json({ error: 'Failed to sign upload' }, { status: 500 });
-  }
+  try {
+    const { data, error } = await supabase.storage.from(bucket).createSignedUploadUrl(objectName);
+    if (error || !data) {
+      return NextResponse.json({ error: 'Failed to sign upload', details: error?.message }, { status: 500 });
+    }
 
-  // Optimistically set fields so the app can reflect immediately
-  if (kind === 'audio') {
-    await db.update(songs).set({ audioUrl: objectName, updatedBy: session?.user?.id, updatedAt: new Date() }).where(eq(songs.id, songId));
-  } else {
-    // Build public URL for cover in public bucket
-    const base = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
-    const publicUrl = `${base}/storage/v1/object/public/${bucket}/${objectName}`;
-    await db.update(songs).set({ coverUrl: publicUrl, updatedBy: session?.user?.id, updatedAt: new Date() }).where(eq(songs.id, songId));
-  }
+    // Optimistically set fields so the app can reflect immediately
+    if (kind === 'audio') {
+      await db.update(songs).set({ audioUrl: objectName, updatedBy: session?.user?.id, updatedAt: new Date() }).where(eq(songs.id, songId));
+    } else {
+      // Build public URL for cover in public bucket
+      const base = url.replace(/\/$/, '');
+      const publicUrl = `${base}/storage/v1/object/public/${bucket}/${objectName}`;
+      await db.update(songs).set({ coverUrl: publicUrl, updatedBy: session?.user?.id, updatedAt: new Date() }).where(eq(songs.id, songId));
+    }
 
-  return NextResponse.json({
-    url: data.signedUrl,
-    token: data.token,
-    path: objectName,
-    bucket,
-    contentType,
-  }, { headers: cors });
+    return NextResponse.json({
+      url: data.signedUrl,
+      token: data.token,
+      path: objectName,
+      bucket,
+      contentType,
+    }, { headers: cors });
+  } catch (e: any) {
+    return NextResponse.json({ error: 'Unexpected error', message: String(e?.message || e) }, { status: 500 });
+  }
 }
 
 

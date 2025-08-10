@@ -1,0 +1,11 @@
+.next/
+node_modules/
+.env*
+drizzle/meta/
+*.log
+coverage/
+playwright-report/
+test-results/
+supabase/.temp/
+
+

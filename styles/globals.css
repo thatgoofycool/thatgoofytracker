@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Accessible focus styles */
+:focus-visible {
+  outline: 2px solid theme('colors.sky.500');
+  outline-offset: 2px;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  @apply bg-white text-slate-900 antialiased;
+}
+
+/* Tag color utilities derived from tag.color tokens */
+.tag-emerald { @apply bg-emerald-100 text-emerald-700 border border-emerald-200; }
+.tag-violet { @apply bg-violet-100 text-violet-700 border border-violet-200; }
+.tag-cyan { @apply bg-cyan-100 text-cyan-700 border border-cyan-200; }
+.tag-amber { @apply bg-amber-100 text-amber-800 border border-amber-200; }
+.tag-slate { @apply bg-slate-100 text-slate-700 border border-slate-200; }
+.tag-sky { @apply bg-sky-100 text-sky-700 border border-sky-200; }
+
+

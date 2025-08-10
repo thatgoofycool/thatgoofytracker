@@ -10,7 +10,7 @@ export default function UploadForm({ songId }: { songId: string }) {
   const router = useRouter();
   const { Toast, showSuccess, showError } = useToast();
 
-  async function handleUpload(formData: FormData) {
+  async function handleUpload() {
     try {
       if (audioFile) {
         const audioMeta = {
@@ -50,9 +50,7 @@ export default function UploadForm({ songId }: { songId: string }) {
     <div className="flex items-center gap-2">
       <input className="text-sm" type="file" accept="audio/wav,audio/x-wav,audio/aiff,audio/x-aiff,audio/mpeg,audio/mp4,audio/x-m4a,audio/m4a" onChange={(e) => setAudioFile(e.target.files?.[0] || null)} />
       <input className="text-sm" type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setCoverFile(e.target.files?.[0] || null)} />
-      <form action={handleUpload}>
-        <SubmitButton className="px-3 py-1.5 rounded-md bg-slate-900 text-white hover:bg-slate-800 active:scale-95 transition" pendingText="Uploading...">Upload</SubmitButton>
-      </form>
+      <button onClick={handleUpload} className="px-3 py-1.5 rounded-md bg-slate-900 text-white hover:bg-slate-800 active:scale-95 transition" aria-label="Upload files">Upload</button>
       <Toast />
     </div>
   );

@@ -7,15 +7,13 @@ import { db, songs } from '@/lib/db';
 import { eq } from 'drizzle-orm';
 import crypto from 'node:crypto';
 import { limitRequest } from '@/lib/rateLimit';
-import { handleCors } from '@/lib/cors';
+import { corsHeaders, preflight } from '@/lib/cors';
 
-export async function OPTIONS(req: NextRequest) {
-  return handleCors(req);
-}
+export async function OPTIONS(req: NextRequest) { return preflight(req); }
 
 export async function POST(req: NextRequest) {
-  const cors = handleCors(req);
-  if (cors instanceof NextResponse) return cors;
+  const origin = req.headers.get('origin') || undefined;
+  const cors = corsHeaders(origin);
 
   const session = await getServerSession(authOptions);
   const role = session?.user?.role;

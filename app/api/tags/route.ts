@@ -4,10 +4,10 @@ import { desc } from 'drizzle-orm';
 import { tagCreateSchema } from '@/lib/validators';
 import { getServerSession } from 'next-auth';
 import { authOptions, assertRole } from '@/lib/auth';
-import { handleCors } from '@/lib/cors';
+import { corsHeaders, preflight } from '@/lib/cors';
 import { limitRequest } from '@/lib/rateLimit';
 
-export async function OPTIONS(req: NextRequest) { return handleCors(req); }
+export async function OPTIONS(req: NextRequest) { return preflight(req); }
 
 export async function GET() {
   const list = await db.select().from(tags).orderBy(desc(tags.name));
@@ -15,8 +15,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const cors = handleCors(req);
-  if (cors instanceof NextResponse) return cors;
+  const origin = req.headers.get('origin') || undefined;
+  const cors = corsHeaders(origin);
   const session = await getServerSession(authOptions);
   if (!assertRole(session?.user?.role, ['admin', 'editor'])) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   const ip = req.headers.get('x-forwarded-for') || 'unknown';

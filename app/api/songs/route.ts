@@ -4,10 +4,10 @@ import { and, desc, eq, ilike, inArray } from 'drizzle-orm';
 import { paginationQuerySchema, songCreateSchema } from '@/lib/validators';
 import { getServerSession } from 'next-auth';
 import { authOptions, assertRole } from '@/lib/auth';
-import { handleCors } from '@/lib/cors';
+import { corsHeaders, preflight } from '@/lib/cors';
 import { limitRequest } from '@/lib/rateLimit';
 
-export async function OPTIONS(req: NextRequest) { return handleCors(req); }
+export async function OPTIONS(req: NextRequest) { return preflight(req); }
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
@@ -42,8 +42,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const cors = handleCors(req);
-  if (cors instanceof NextResponse) return cors;
+  const origin = req.headers.get('origin') || undefined;
+  const cors = corsHeaders(origin);
 
   const session = await getServerSession(authOptions);
   const role = session?.user?.role;

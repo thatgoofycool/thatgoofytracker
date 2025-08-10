@@ -4,7 +4,7 @@ const allowedOrigins = [process.env.NEXT_PUBLIC_APP_URL || ''];
 
 export function corsHeaders(origin?: string) {
   const headers: Record<string, string> = {
-    'Vary': 'Origin',
+    Vary: 'Origin',
     'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
@@ -14,13 +14,10 @@ export function corsHeaders(origin?: string) {
   return headers;
 }
 
-export function handleCors(req: NextRequest) {
+export function preflight(req: NextRequest): NextResponse {
   const origin = req.headers.get('origin') || undefined;
   const headers = corsHeaders(origin);
-  if (req.method === 'OPTIONS') {
-    return new NextResponse(null, { status: 204, headers });
-  }
-  return headers;
+  return new NextResponse(null, { status: 204, headers });
 }
 
 

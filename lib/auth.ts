@@ -77,7 +77,8 @@ export const authOptions: NextAuthOptions = {
 
 export function assertRole(role: AppUserRole | AppUserRole[] | undefined, allowed: AppUserRole[]): boolean {
   if (!role) return false;
-  return allowed.includes(role);
+  const roles = Array.isArray(role) ? role : [role];
+  return roles.some((r) => allowed.includes(r));
 }
 
 

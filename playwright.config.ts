@@ -1,12 +1,4 @@
-import { defineConfig } from '@playwright/test';
-
-export default defineConfig({
-  testDir: './e2e',
-  use: {
-    baseURL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-    trace: 'on-first-retry',
-    headless: true,
-  },
-});
+// Intentionally minimal to avoid being compiled by Next.js. The real config lives in e2e/playwright.config.ts
+export default {} as any;
 
 

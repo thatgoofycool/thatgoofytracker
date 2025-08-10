@@ -50,8 +50,6 @@ export async function POST(req: NextRequest) {
   // Optimistically set fields so the app can reflect immediately
   if (kind === 'audio') {
     await db.update(songs).set({ audioUrl: objectName, updatedBy: session?.user?.id, updatedAt: new Date() }).where(eq(songs.id, songId));
-  } else {
-    await db.update(songs).set({ previewUrl: objectName, updatedBy: session?.user?.id, updatedAt: new Date() }).where(eq(songs.id, songId));
   }
 
   return NextResponse.json({

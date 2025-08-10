@@ -130,10 +130,10 @@ export default async function AdminPage() {
             'use server';
             try {
               await createSong(fd);
-              redirect('/admin?toast=Created&type=success');
             } catch {
               redirect('/admin?toast=Failed&type=error');
             }
+            redirect('/admin?toast=Created&type=success');
           }}
           className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3"
         >
@@ -178,10 +178,10 @@ function AdminSongRow({ song, tags, selectedTagIds, requestUpload, updateSong, d
           'use server';
           try {
             await updateSong(fd);
-            redirect('/admin?toast=Saved&type=success');
           } catch {
             redirect('/admin?toast=Failed&type=error');
           }
+          redirect('/admin?toast=Saved&type=success');
         }}
         className="flex flex-wrap items-center gap-2" aria-label="Update song"
       >
@@ -202,10 +202,10 @@ function AdminSongRow({ song, tags, selectedTagIds, requestUpload, updateSong, d
             'use server';
             try {
               await assignTags(fd);
-              redirect('/admin?toast=Tags%20saved&type=success');
             } catch {
               redirect('/admin?toast=Tag%20save%20failed&type=error');
             }
+            redirect('/admin?toast=Tags%20saved&type=success');
           }}
           className="flex items-center gap-2 flex-wrap"
           aria-label="Assign tags"
@@ -228,10 +228,10 @@ function AdminSongRow({ song, tags, selectedTagIds, requestUpload, updateSong, d
           'use server';
           try {
             await deleteSong(fd);
-            redirect('/admin?toast=Deleted&type=success');
           } catch {
             redirect('/admin?toast=Delete failed&type=error');
           }
+          redirect('/admin?toast=Deleted&type=success');
         }}
         aria-label="Delete song"
       >

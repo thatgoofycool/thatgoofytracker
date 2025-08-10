@@ -168,35 +168,15 @@ export default async function AdminPage() {
 
 function AdminSongRow({ song, tags, selectedTagIds, requestUpload, updateSong, deleteSong, assignTags }: { song: any; tags: any[]; selectedTagIds: string[]; requestUpload: (fd: FormData) => Promise<void>; updateSong: (fd: FormData) => Promise<void>; deleteSong: (fd: FormData) => Promise<void>; assignTags: (fd: FormData) => Promise<void> }) {
   return (
-    <div className="rounded-lg border border-slate-200 p-3 flex items-center justify-between gap-3">
-      <div>
-        <div className="font-medium">{song.title}</div>
-        <div className="text-xs text-slate-600">{song.status}</div>
-      </div>
-      <div className="flex items-center gap-2">
+    <div className="rounded-lg border border-slate-200 p-3 flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="font-medium">{song.title}</div>
+          <div className="text-xs text-slate-600">{song.status}</div>
+        </div>
         <Link className="px-3 py-1.5 rounded-md border border-slate-300" href={`/api/songs/${song.id}`}>Edit API</Link>
-        <form action={requestUpload} className="flex items-center gap-2" aria-label="Upload audio and cover">
-          <input type="hidden" name="songId" value={song.id} />
-          <select name="status" defaultValue={song.status} className="rounded-md border border-slate-300 px-2 py-1 text-sm">
-            <option value="draft">Draft</option>
-            <option value="in_progress">In Progress</option>
-            <option value="mixing">Mixing</option>
-            <option value="mastering">Mastering</option>
-            <option value="done">Done</option>
-          </select>
-          <div className="flex items-center gap-1">
-            {tags.map(t => (
-              <label key={t.id} className={`text-xs inline-flex items-center gap-1 border rounded-full px-2 py-1 tag-${t.color}`}>
-                <input type="checkbox" name="tagIds" value={t.id} defaultChecked={selectedTagIds.includes(t.id)} />
-                {t.name}
-              </label>
-            ))}
-          </div>
-          <input className="text-sm" type="file" name="file" accept="audio/wav,audio/x-wav,audio/aiff,audio/x-aiff,audio/mpeg,audio/mp4,audio/x-m4a,audio/m4a" required />
-          <input className="text-sm" type="file" name="cover" accept="image/png,image/jpeg,image/webp" />
-          <button type="submit" className="px-3 py-1.5 rounded-md bg-slate-900 text-white">Upload</button>
-        </form>
-        <form action={updateSong} className="flex items-center gap-2" aria-label="Update song">
+      </div>
+      <form action={updateSong} className="flex flex-wrap items-center gap-2" aria-label="Update song">
           <input type="hidden" name="id" value={song.id} />
           <input name="title" defaultValue={song.title} className="rounded-md border border-slate-300 px-2 py-1 text-sm" />
           <select name="status" defaultValue={song.status} className="rounded-md border border-slate-300 px-2 py-1 text-sm">
@@ -207,22 +187,25 @@ function AdminSongRow({ song, tags, selectedTagIds, requestUpload, updateSong, d
             <option value="done">Done</option>
           </select>
           <button type="submit" className="px-3 py-1.5 rounded-md border border-slate-300">Save</button>
-        </form>
-        <form action={deleteSong} aria-label="Delete song">
-          <input type="hidden" name="id" value={song.id} />
-          <button type="submit" className="px-3 py-1.5 rounded-md border border-red-300 text-red-700">Delete</button>
-        </form>
-        <form action={assignTags} className="flex items-center gap-2 flex-wrap" aria-label="Assign tags">
-          <input type="hidden" name="songId" value={song.id} />
+      </form>
+      <form action={requestUpload} className="flex flex-wrap items-center gap-2" aria-label="Upload audio and cover">
+        <input type="hidden" name="songId" value={song.id} />
+        <div className="flex items-center gap-1 flex-wrap">
           {tags.map(t => (
-            <label key={t.id} className="text-xs inline-flex items-center gap-1 border rounded-full px-2 py-1 tag-" aria-label={`Tag ${t.name}`}>
+            <label key={t.id} className={`text-xs inline-flex items-center gap-1 border rounded-full px-2 py-1 tag-${t.color}`}>
               <input type="checkbox" name="tagIds" value={t.id} defaultChecked={selectedTagIds.includes(t.id)} />
-              <span className={`tag-${t.color}`}>{t.name}</span>
+              {t.name}
             </label>
           ))}
-          <button type="submit" className="px-3 py-1.5 rounded-md border border-slate-300">Apply</button>
-        </form>
-      </div>
+        </div>
+        <input className="text-sm" type="file" name="file" accept="audio/wav,audio/x-wav,audio/aiff,audio/x-aiff,audio/mpeg,audio/mp4,audio/x-m4a,audio/m4a" required />
+        <input className="text-sm" type="file" name="cover" accept="image/png,image/jpeg,image/webp" />
+        <button type="submit" className="px-3 py-1.5 rounded-md bg-slate-900 text-white">Upload</button>
+      </form>
+      <form action={deleteSong} aria-label="Delete song">
+          <input type="hidden" name="id" value={song.id} />
+          <button type="submit" className="px-3 py-1.5 rounded-md border border-red-300 text-red-700">Delete</button>
+      </form>
     </div>
   );
 }

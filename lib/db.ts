@@ -41,6 +41,7 @@ export const songs = pgTable('songs', {
   status: statusEnum('status').notNull().default('draft'),
   previewUrl: text('preview_url'),
   audioUrl: text('audio_url'),
+  coverUrl: text('cover_url'),
   waveformJson: jsonb('waveform_json').$type<{ peaks: number[]; duration: number } | null>(),
   createdBy: uuid('created_by').references(() => users.id),
   updatedBy: uuid('updated_by').references(() => users.id),

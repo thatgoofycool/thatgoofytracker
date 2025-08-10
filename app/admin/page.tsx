@@ -47,7 +47,6 @@ export default async function AdminPage() {
     await db.insert(songs).values({ ...parsed.data, createdBy: session?.user?.id, updatedBy: session?.user?.id });
     revalidatePath('/');
     revalidatePath('/admin');
-    return { ok: true } as const;
   }
 
   async function requestUpload(formData: FormData) {
@@ -91,7 +90,6 @@ export default async function AdminPage() {
     } catch {}
     revalidatePath('/');
     revalidatePath('/admin');
-    return { ok: true } as const;
   }
 
   async function updateSong(formData: FormData) {
@@ -105,7 +103,6 @@ export default async function AdminPage() {
     await db.update(songs).set({ title, status: status as any, updatedBy: session?.user?.id, updatedAt: new Date() }).where(eq(songs.id, id));
     revalidatePath('/');
     revalidatePath('/admin');
-    return { ok: true } as const;
   }
 
   async function deleteSong(formData: FormData) {
@@ -117,7 +114,6 @@ export default async function AdminPage() {
     await db.delete(songs).where(eq(songs.id, id));
     revalidatePath('/');
     revalidatePath('/admin');
-    return { ok: true } as const;
   }
 
   async function assignTags(formData: FormData) {
@@ -149,10 +145,10 @@ export default async function AdminPage() {
         <form
           action={async (fd: FormData) => {
             'use server';
-            const res = await createSong(fd);
-            if (res?.ok) {
+            try {
+              await createSong(fd);
               redirect('/admin?toast=Created&type=success');
-            } else {
+            } catch {
               redirect('/admin?toast=Failed&type=error');
             }
           }}
@@ -197,9 +193,12 @@ function AdminSongRow({ song, tags, selectedTagIds, requestUpload, updateSong, d
       <form
         action={async (fd: FormData) => {
           'use server';
-          const r = await updateSong(fd);
-          if (r?.ok) redirect('/admin?toast=Saved&type=success');
-          else redirect('/admin?toast=Failed&type=error');
+          try {
+            await updateSong(fd);
+            redirect('/admin?toast=Saved&type=success');
+          } catch {
+            redirect('/admin?toast=Failed&type=error');
+          }
         }}
         className="flex flex-wrap items-center gap-2" aria-label="Update song"
       >
@@ -217,9 +216,12 @@ function AdminSongRow({ song, tags, selectedTagIds, requestUpload, updateSong, d
       <form
         action={async (fd: FormData) => {
           'use server';
-          const r = await requestUpload(fd);
-          if (r?.ok) redirect('/admin?toast=Uploaded&type=success');
-          else redirect('/admin?toast=Upload failed&type=error');
+          try {
+            await requestUpload(fd);
+            redirect('/admin?toast=Uploaded&type=success');
+          } catch {
+            redirect('/admin?toast=Upload failed&type=error');
+          }
         }}
         className="flex flex-wrap items-center gap-2" aria-label="Upload audio and cover"
       >
@@ -239,9 +241,12 @@ function AdminSongRow({ song, tags, selectedTagIds, requestUpload, updateSong, d
       <form
         action={async (fd: FormData) => {
           'use server';
-          const r = await deleteSong(fd);
-          if (r?.ok) redirect('/admin?toast=Deleted&type=success');
-          else redirect('/admin?toast=Delete failed&type=error');
+          try {
+            await deleteSong(fd);
+            redirect('/admin?toast=Deleted&type=success');
+          } catch {
+            redirect('/admin?toast=Delete failed&type=error');
+          }
         }}
         aria-label="Delete song"
       >

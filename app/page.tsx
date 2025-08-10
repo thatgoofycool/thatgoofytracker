@@ -35,7 +35,11 @@ async function getData(searchParams: Record<string, string | string[] | undefine
       const ids = filtered.map(s => s.id);
       let tagMap: Record<string, { id: string; name: string; slug: string; color: string }[]> = {};
       if (ids.length) {
-        const rows2 = await db.select({ songId: songTags.songId, tagId: tags.id, name: tags.name, slug: tags.slug, color: tags.color }).from(songTags).leftJoin(tags, eq(songTags.tagId, tags.id)).where(inArray(songTags.songId, ids));
+        const rows2 = await db
+          .select({ songId: songTags.songId, tagId: tags.id, name: tags.name, slug: tags.slug, color: tags.color })
+          .from(songTags)
+          .innerJoin(tags, eq(songTags.tagId, tags.id))
+          .where(inArray(songTags.songId, ids));
         for (const r of rows2) {
           (tagMap[r.songId] ||= []).push({ id: r.tagId, name: r.name, slug: r.slug, color: r.color });
         }
@@ -47,7 +51,11 @@ async function getData(searchParams: Record<string, string | string[] | undefine
   const ids = items.map(s => s.id);
   let tagMap: Record<string, { id: string; name: string; slug: string; color: string }[]> = {};
   if (ids.length) {
-    const rows = await db.select({ songId: songTags.songId, tagId: tags.id, name: tags.name, slug: tags.slug, color: tags.color }).from(songTags).leftJoin(tags, eq(songTags.tagId, tags.id)).where(inArray(songTags.songId, ids));
+    const rows = await db
+      .select({ songId: songTags.songId, tagId: tags.id, name: tags.name, slug: tags.slug, color: tags.color })
+      .from(songTags)
+      .innerJoin(tags, eq(songTags.tagId, tags.id))
+      .where(inArray(songTags.songId, ids));
     for (const r of rows) {
       (tagMap[r.songId] ||= []).push({ id: r.tagId, name: r.name, slug: r.slug, color: r.color });
     }

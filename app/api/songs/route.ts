@@ -30,7 +30,11 @@ export async function GET(req: NextRequest) {
   const songIds = items.map(s => s.id);
   let tagMap: Record<string, { id: string; name: string; slug: string; color: string }[]> = {};
   if (songIds.length) {
-    const rows = await db.select({ songId: songTags.songId, tagId: tags.id, name: tags.name, slug: tags.slug, color: tags.color }).from(songTags).leftJoin(tags, eq(songTags.tagId, tags.id)).where(inArray(songTags.songId, songIds));
+    const rows = await db
+      .select({ songId: songTags.songId, tagId: tags.id, name: tags.name, slug: tags.slug, color: tags.color })
+      .from(songTags)
+      .innerJoin(tags, eq(songTags.tagId, tags.id))
+      .where(inArray(songTags.songId, songIds));
     for (const r of rows) {
       const arr = (tagMap[r.songId] ||= []);
       arr.push({ id: r.tagId, name: r.name, slug: r.slug, color: r.color });

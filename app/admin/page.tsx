@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { songCreateSchema } from '@/lib/validators';
 import Link from 'next/link';
 import SubmitButton from '@/components/SubmitButton';
-import { createClient } from '@supabase/supabase-js';
+import ToastDisplay from '@/components/ToastDisplay';
 import { eq, desc } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
@@ -47,6 +47,7 @@ export default async function AdminPage() {
     await db.insert(songs).values({ ...parsed.data, createdBy: session?.user?.id, updatedBy: session?.user?.id });
     revalidatePath('/');
     revalidatePath('/admin');
+    return { ok: true } as const;
   }
 
   async function requestUpload(formData: FormData) {
@@ -90,6 +91,7 @@ export default async function AdminPage() {
     } catch {}
     revalidatePath('/');
     revalidatePath('/admin');
+    return { ok: true } as const;
   }
 
   async function updateSong(formData: FormData) {
@@ -103,6 +105,7 @@ export default async function AdminPage() {
     await db.update(songs).set({ title, status: status as any, updatedBy: session?.user?.id, updatedAt: new Date() }).where(eq(songs.id, id));
     revalidatePath('/');
     revalidatePath('/admin');
+    return { ok: true } as const;
   }
 
   async function deleteSong(formData: FormData) {
@@ -114,6 +117,7 @@ export default async function AdminPage() {
     await db.delete(songs).where(eq(songs.id, id));
     revalidatePath('/');
     revalidatePath('/admin');
+    return { ok: true } as const;
   }
 
   async function assignTags(formData: FormData) {
@@ -133,6 +137,9 @@ export default async function AdminPage() {
 
   return (
     <main className="max-w-6xl mx-auto p-4 sm:p-6">
+      {/* Toasts via URL query (?toast=message&type=success|error) */}
+      {/* @ts-expect-error Server Component renders client child */}
+      <ToastDisplay message={(new URLSearchParams((global as any).location?.search ?? '')).get('toast') ?? undefined} type={(new URLSearchParams((global as any).location?.search ?? '')).get('type') as any} />
       <header className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">Admin</h1>
         <Link className="px-3 py-2 rounded-md bg-slate-100 hover:bg-slate-200" href="/">Back</Link>
@@ -140,7 +147,18 @@ export default async function AdminPage() {
 
       <section className="mt-6">
         <h2 className="text-lg font-medium">Create Song</h2>
-        <form action={createSong} className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <form
+          action={async (fd: FormData) => {
+            'use server';
+            const res = await createSong(fd);
+            if (res?.ok) {
+              redirect('/admin?toast=Created&type=success');
+            } else {
+              redirect('/admin?toast=Failed&type=error');
+            }
+          }}
+          className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3"
+        >
           <input name="title" placeholder="Title" required className="rounded-md border border-slate-300 px-3 py-2" />
           <input name="slug" placeholder="Slug (a-z0-9-)" pattern="[a-z0-9\-]+" required className="rounded-md border border-slate-300 px-3 py-2" />
           <select name="status" className="rounded-md border border-slate-300 px-3 py-2">
@@ -177,7 +195,15 @@ function AdminSongRow({ song, tags, selectedTagIds, requestUpload, updateSong, d
         </div>
         <Link className="px-3 py-1.5 rounded-md border border-slate-300" href={`/api/songs/${song.id}`}>Edit API</Link>
       </div>
-      <form action={updateSong} className="flex flex-wrap items-center gap-2" aria-label="Update song">
+      <form
+        action={async (fd: FormData) => {
+          'use server';
+          const r = await updateSong(fd);
+          if (r?.ok) redirect('/admin?toast=Saved&type=success');
+          else redirect('/admin?toast=Failed&type=error');
+        }}
+        className="flex flex-wrap items-center gap-2" aria-label="Update song"
+      >
           <input type="hidden" name="id" value={song.id} />
           <input name="title" defaultValue={song.title} className="rounded-md border border-slate-300 px-2 py-1 text-sm" />
           <select name="status" defaultValue={song.status} className="rounded-md border border-slate-300 px-2 py-1 text-sm">
@@ -189,7 +215,15 @@ function AdminSongRow({ song, tags, selectedTagIds, requestUpload, updateSong, d
           </select>
         <SubmitButton className="px-3 py-1.5 rounded-md border border-slate-300 hover:bg-slate-50 active:scale-95 transition" pendingText="Saving..." ariaLabel="Save changes">Save</SubmitButton>
       </form>
-      <form action={requestUpload} className="flex flex-wrap items-center gap-2" aria-label="Upload audio and cover">
+      <form
+        action={async (fd: FormData) => {
+          'use server';
+          const r = await requestUpload(fd);
+          if (r?.ok) redirect('/admin?toast=Uploaded&type=success');
+          else redirect('/admin?toast=Upload failed&type=error');
+        }}
+        className="flex flex-wrap items-center gap-2" aria-label="Upload audio and cover"
+      >
         <input type="hidden" name="songId" value={song.id} />
         <div className="flex items-center gap-1 flex-wrap">
           {tags.map(t => (
@@ -203,7 +237,15 @@ function AdminSongRow({ song, tags, selectedTagIds, requestUpload, updateSong, d
         <input className="text-sm" type="file" name="cover" accept="image/png,image/jpeg,image/webp" />
         <SubmitButton className="px-3 py-1.5 rounded-md bg-slate-900 text-white hover:bg-slate-800 active:scale-95 transition" pendingText="Uploading..." ariaLabel="Upload files">Upload</SubmitButton>
       </form>
-      <form action={deleteSong} aria-label="Delete song">
+      <form
+        action={async (fd: FormData) => {
+          'use server';
+          const r = await deleteSong(fd);
+          if (r?.ok) redirect('/admin?toast=Deleted&type=success');
+          else redirect('/admin?toast=Delete failed&type=error');
+        }}
+        aria-label="Delete song"
+      >
           <input type="hidden" name="id" value={song.id} />
           <SubmitButton className="px-3 py-1.5 rounded-md border border-red-300 text-red-700 hover:bg-red-50 active:scale-95 transition" pendingText="Deleting..." ariaLabel="Delete song">Delete</SubmitButton>
       </form>

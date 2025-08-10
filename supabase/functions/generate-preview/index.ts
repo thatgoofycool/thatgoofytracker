@@ -16,6 +16,36 @@ interface StorageEventPayload {
   record: { bucket_id: string; name: string; size: number; metadata: Record<string, unknown> };
 }
 
+async function tryTranscodeToThirtySecondPreview(bytes: ArrayBuffer, durationSec = 30): Promise<Uint8Array | null> {
+  try {
+    // Lazy import to avoid boot failures when ffmpeg is not supported in the runtime
+    // deno-lint-ignore no-explicit-any
+    const ff = await import('https://esm.sh/@ffmpeg/ffmpeg@0.12.7');
+    const createFFmpeg = (ff as any).createFFmpeg as (opts: any) => any;
+    const ffmpeg = createFFmpeg({
+      log: false,
+      // Use a CDN-hosted core to avoid bundling large assets into the function itself
+      corePath: 'https://unpkg.com/@ffmpeg/core@0.12.7/dist/ffmpeg-core.js',
+    });
+    await ffmpeg.load();
+    ffmpeg.FS('writeFile', 'input', new Uint8Array(bytes));
+    // Re-encode to mp3 and trim to exact 30s for consistent playback
+    await ffmpeg.run(
+      '-i', 'input',
+      '-t', String(durationSec),
+      '-vn',
+      '-acodec', 'libmp3lame',
+      '-b:a', '128k',
+      'out.mp3'
+    );
+    const out: Uint8Array = ffmpeg.FS('readFile', 'out.mp3');
+    return out;
+  } catch (_e) {
+    // Fall back to non-trimmed copy if ffmpeg is unavailable in this environment
+    return null;
+  }
+}
+
 export default async function handler(req: Request) {
   try {
     const raw = await req.text();
@@ -33,15 +63,27 @@ export default async function handler(req: Request) {
     // Download original
     const { data: original, error } = await supabase.storage.from('audio-originals').download(name);
     if (error || !original) return new Response('download error', { status: 500 });
-    // Temporarily skip ffmpeg due to Edge boot limits; copy original as preview
-    const previewPath = `${songId}/preview-${crypto.randomUUID()}`;
-    const upload = await supabase.storage.from('audio-previews').upload(previewPath, original, { contentType: original.type || 'application/octet-stream', upsert: true });
-    if (upload.error) return new Response('upload error', { status: 500 });
+
+    const durationSec = Number(Deno.env.get('PREVIEW_DURATION_SECONDS') || 30) || 30;
+    const inputBytes = await original.arrayBuffer();
+    const trimmed = await tryTranscodeToThirtySecondPreview(inputBytes, durationSec);
+
+    // If trimming succeeded, upload MP3; else fall back to copying the original
+    const previewBase = `${songId}/preview-${crypto.randomUUID()}`;
+    const previewPath = trimmed ? `${previewBase}.mp3` : previewBase;
+    if (trimmed) {
+      const mp3Blob = new Blob([trimmed], { type: 'audio/mpeg' });
+      const upload = await supabase.storage.from('audio-previews').upload(previewPath, mp3Blob, { contentType: 'audio/mpeg', upsert: true });
+      if (upload.error) return new Response('upload error', { status: 500 });
+    } else {
+      const upload = await supabase.storage.from('audio-previews').upload(previewPath, original, { contentType: original.type || 'application/octet-stream', upsert: true });
+      if (upload.error) return new Response('upload error', { status: 500 });
+    }
 
     const { data: pub } = supabase.storage.from('audio-previews').getPublicUrl(previewPath);
     const publicUrl = pub?.publicUrl ?? null;
 
-    const waveform = { peaks: [], duration: 30 };
+    const waveform = { peaks: [], duration: durationSec };
 
     // Update DB row
     const { error: rpcErr } = await supabase.from('songs').update({ preview_url: publicUrl || previewPath, waveform_json: waveform }).eq('id', songId);

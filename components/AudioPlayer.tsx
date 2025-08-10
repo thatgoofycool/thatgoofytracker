@@ -58,7 +58,7 @@ export default function AudioPlayer({ previewUrl, waveform, title }: Props) {
     };
     ws.on('ready', onReady);
     return () => { ws.un('ready', onReady); };
-  }, [wavesurferRef.current]);
+  }, [previewUrl]);
 
   if (!previewUrl) {
     return <div className="text-sm text-slate-500">No preview available</div>;

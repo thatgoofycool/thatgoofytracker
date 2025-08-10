@@ -1,8 +1,7 @@
--- Buckets
-select storage.create_bucket('audio-originals', jsonb_build_object('public', false));
-select storage.create_bucket('audio-previews', jsonb_build_object('public', true));
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('audio-originals', 'audio-originals', false)
+ON CONFLICT (id) DO NOTHING;
 
--- Restrict originals to signed URLs only
--- (Supabase storage policies can be set via dashboard; documented in README)
-
-
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('audio-previews', 'audio-previews', true)
+ON CONFLICT (id) DO NOTHING;

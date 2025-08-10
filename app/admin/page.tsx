@@ -8,6 +8,7 @@ import { songCreateSchema } from '@/lib/validators';
 import Link from 'next/link';
 import AuthButtons from '@/components/AuthButtons';
 import SubmitButton from '@/components/SubmitButton';
+import SlugInput from '@/components/SlugInput';
 import ToastDisplay from '@/components/ToastDisplay';
 import UploadForm from '@/components/UploadForm';
 import { eq, desc } from 'drizzle-orm';
@@ -142,7 +143,7 @@ export default async function AdminPage() {
           className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3"
         >
           <input name="title" placeholder="Title" required className="rounded-md border border-slate-300 px-3 py-2" />
-          <input name="slug" placeholder="Slug (a-z0-9-)" pattern="[a-z0-9\-]+" required className="rounded-md border border-slate-300 px-3 py-2" />
+          <SlugInput className="rounded-md border border-slate-300 px-3 py-2" />
           <select name="status" className="rounded-md border border-slate-300 px-3 py-2">
             <option value="draft">Draft</option>
             <option value="in_progress">In Progress</option>

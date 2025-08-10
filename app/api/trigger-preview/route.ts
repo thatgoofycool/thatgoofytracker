@@ -15,12 +15,20 @@ export async function POST(req: NextRequest) {
 
   const supabaseUrl = process.env.SUPABASE_URL || '';
   const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  if (!supabaseUrl || !serviceRole) {
+    return NextResponse.json({ error: 'Missing server env' }, { status: 500 });
+  }
   const fnUrl = `${supabaseUrl.replace(/\/$/, '')}/functions/v1/generate-preview`;
 
   const payload = { type: 'INSERT', table: 'storage.objects', record: { bucket_id: bucket, name: path, size: Number(size || 0), metadata: {} } };
-  const res = await fetch(fnUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceRole}` }, body: JSON.stringify(payload) });
-  if (!res.ok) return NextResponse.json({ error: 'Function error' }, { status: 500 });
-  return NextResponse.json({ ok: true });
+  try {
+    const res = await fetch(fnUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceRole}` }, body: JSON.stringify(payload) });
+    const text = await res.text();
+    if (!res.ok) return NextResponse.json({ error: 'Function error', status: res.status, body: text }, { status: 500 });
+    return NextResponse.json({ ok: true, body: text });
+  } catch (e: any) {
+    return NextResponse.json({ error: 'Request failed', message: String(e?.message || e) }, { status: 500 });
+  }
 }
 
 

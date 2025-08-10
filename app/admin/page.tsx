@@ -138,8 +138,7 @@ export default async function AdminPage() {
   return (
     <main className="max-w-6xl mx-auto p-4 sm:p-6">
       {/* Toasts via URL query (?toast=message&type=success|error) */}
-      {/* @ts-expect-error Server Component renders client child */}
-      <ToastDisplay message={(new URLSearchParams((global as any).location?.search ?? '')).get('toast') ?? undefined} type={(new URLSearchParams((global as any).location?.search ?? '')).get('type') as any} />
+      <ToastDisplay />
       <header className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">Admin</h1>
         <Link className="px-3 py-2 rounded-md bg-slate-100 hover:bg-slate-200" href="/">Back</Link>

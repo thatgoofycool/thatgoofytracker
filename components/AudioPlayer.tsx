@@ -28,8 +28,8 @@ export default function AudioPlayer({ previewUrl, waveform, title }: Props) {
     });
 
     if (waveform?.peaks && waveform.peaks.length) {
-      // Load audio with peaks for performance
-      ws.load(previewUrl, waveform.peaks, 'auto');
+      // Load audio with provided mono peaks; wrap to match multi-channel signature
+      ws.load(previewUrl, [waveform.peaks] as any, waveform.duration || undefined);
     } else {
       ws.load(previewUrl);
     }

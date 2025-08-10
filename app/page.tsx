@@ -2,6 +2,7 @@ import { db, songs, songTags, tags } from '@/lib/db';
 import { createClient } from '@supabase/supabase-js';
 import { and, desc, eq, ilike, inArray } from 'drizzle-orm';
 import Link from 'next/link';
+import AuthButtons from '@/components/AuthButtons';
 import { paginationQuerySchema } from '@/lib/validators';
 import { Suspense } from 'react';
 import AudioPlayer from '@/components/AudioPlayer';
@@ -96,7 +97,7 @@ export default async function Page({ searchParams }: { searchParams: Record<stri
           {role ? (
             <Link className="px-3 py-2 rounded-md bg-slate-100 hover:bg-slate-200" href="/admin">Admin</Link>
           ) : null}
-          <Link className="px-3 py-2 rounded-md bg-slate-100 hover:bg-slate-200" href="/api/auth/signin">Sign in</Link>
+          <AuthButtons signedIn={Boolean(role)} />
         </div>
       </header>
 

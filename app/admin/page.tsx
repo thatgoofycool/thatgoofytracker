@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { songCreateSchema } from '@/lib/validators';
 import Link from 'next/link';
+import AuthButtons from '@/components/AuthButtons';
 import SubmitButton from '@/components/SubmitButton';
 import ToastDisplay from '@/components/ToastDisplay';
 import UploadForm from '@/components/UploadForm';
@@ -120,7 +121,10 @@ export default async function AdminPage() {
       <ToastDisplay />
       <header className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">Admin</h1>
-        <Link className="px-3 py-2 rounded-md bg-slate-100 hover:bg-slate-200" href="/">Back</Link>
+        <div className="flex items-center gap-3">
+          <Link className="px-3 py-2 rounded-md bg-slate-100 hover:bg-slate-200" href="/">Back</Link>
+          <AuthButtons signedIn={true} />
+        </div>
       </header>
 
       <section className="mt-6">

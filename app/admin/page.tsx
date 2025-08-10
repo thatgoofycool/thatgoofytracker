@@ -8,6 +8,7 @@ import { songCreateSchema } from '@/lib/validators';
 import Link from 'next/link';
 import SubmitButton from '@/components/SubmitButton';
 import ToastDisplay from '@/components/ToastDisplay';
+import UploadForm from '@/components/UploadForm';
 import { eq, desc } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
@@ -195,19 +196,7 @@ function AdminSongRow({ song, tags, selectedTagIds, requestUpload, updateSong, d
           </select>
         <SubmitButton className="px-3 py-1.5 rounded-md border border-slate-300 hover:bg-slate-50 active:scale-95 transition" pendingText="Saving..." ariaLabel="Save changes">Save</SubmitButton>
       </form>
-      <form
-        action={async (fd: FormData) => {
-          'use server';
-          try {
-            await requestUpload(fd);
-            redirect('/admin?toast=Uploaded&type=success');
-          } catch {
-            redirect('/admin?toast=Upload failed&type=error');
-          }
-        }}
-        className="flex flex-wrap items-center gap-2" aria-label="Upload audio and cover"
-      >
-        <input type="hidden" name="songId" value={song.id} />
+      <div className="flex flex-wrap items-center gap-2" aria-label="Upload audio and cover">
         <div className="flex items-center gap-1 flex-wrap">
           {tags.map(t => (
             <label key={t.id} className={`text-xs inline-flex items-center gap-1 border rounded-full px-2 py-1 tag-${t.color}`}>
@@ -216,10 +205,8 @@ function AdminSongRow({ song, tags, selectedTagIds, requestUpload, updateSong, d
             </label>
           ))}
         </div>
-        <input className="text-sm" type="file" name="file" accept="audio/wav,audio/x-wav,audio/aiff,audio/x-aiff,audio/mpeg,audio/mp4,audio/x-m4a,audio/m4a" required />
-        <input className="text-sm" type="file" name="cover" accept="image/png,image/jpeg,image/webp" />
-        <SubmitButton className="px-3 py-1.5 rounded-md bg-slate-900 text-white hover:bg-slate-800 active:scale-95 transition" pendingText="Uploading..." ariaLabel="Upload files">Upload</SubmitButton>
-      </form>
+        <UploadForm songId={song.id} />
+      </div>
       <form
         action={async (fd: FormData) => {
           'use server';

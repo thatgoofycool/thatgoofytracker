@@ -8,12 +8,13 @@ const nextConfig = {
   },
   async headers() {
     const self = "'self'";
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
     const vercelSelf = 'vercel.live';
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
-    const connectSrc = [self, supabaseUrl, 'https://api.upstash.com', appUrl, 'https://plausible.io'].filter(Boolean).join(' ');
-    const imgSrc = [self, 'data:', 'blob:', supabaseUrl].filter(Boolean).join(' ');
-    const mediaSrc = [self, 'blob:', supabaseUrl].filter(Boolean).join(' ');
+    const supabaseWildcard = '*.supabase.co';
+    const connectSrc = [self, supabaseUrl, `https://${supabaseWildcard}`, 'https://api.upstash.com', appUrl, 'https://plausible.io'].filter(Boolean).join(' ');
+    const imgSrc = [self, 'data:', 'blob:', supabaseUrl, `https://${supabaseWildcard}`].filter(Boolean).join(' ');
+    const mediaSrc = [self, 'blob:', supabaseUrl, `https://${supabaseWildcard}`].filter(Boolean).join(' ');
     return [
       {
         source: '/(.*)',

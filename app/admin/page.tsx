@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { songCreateSchema } from '@/lib/validators';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +15,7 @@ export default async function AdminPage() {
   const session = await getServerSession(authOptions);
   if (!assertRole(session?.user?.role, ['admin', 'editor'])) redirect('/');
 
-  const list = await db.select().from(songs).orderBy(songs.updatedAt.desc());
+  const list = await db.select().from(songs).orderBy(desc(songs.updatedAt));
   const tagsList = await db.select().from(tags);
   const songTagRows = list.length ? await db.select().from(songTags).where(eq(songTags.songId, list[0].id)).then(async () => {
     // fetch all mapping for list ids

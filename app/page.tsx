@@ -1,4 +1,5 @@
 import { db, songs, songTags, tags } from '@/lib/db';
+import { createClient } from '@supabase/supabase-js';
 import { and, desc, eq, ilike, inArray } from 'drizzle-orm';
 import Link from 'next/link';
 import { paginationQuerySchema } from '@/lib/validators';
@@ -60,7 +61,22 @@ async function getData(searchParams: Record<string, string | string[] | undefine
       (tagMap[r.songId] ||= []).push({ id: r.tagId, name: r.name, slug: r.slug, color: r.color });
     }
   }
-  return items.map(s => ({ ...s, tags: tagMap[s.id] || [] }));
+  // Attach transient signed preview URLs if missing
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  let signedMap: Record<string, string | undefined> = {};
+  if (supabaseUrl && supabaseKey) {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    for (const s of items) {
+      if (!s.previewUrl && s.audioUrl) {
+        try {
+          const { data } = await supabase.storage.from('audio-originals').createSignedUrl(s.audioUrl, 60);
+          signedMap[s.id] = data?.signedUrl;
+        } catch {}
+      }
+    }
+  }
+  return items.map(s => ({ ...s, previewUrl: s.previewUrl || signedMap[s.id], tags: tagMap[s.id] || [] }));
 }
 
 export default async function Page({ searchParams }: { searchParams: Record<string, string | string[] | undefined> }) {

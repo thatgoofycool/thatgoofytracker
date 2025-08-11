@@ -1,9 +1,8 @@
 "use client";
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import SubmitButton from './SubmitButton';
 import { useToast } from './toast';
-import { createClient } from '@supabase/supabase-js';
 
 export default function UploadForm({ songId }: { songId: string }) {
   const [audioFile, setAudioFile] = useState<File | null>(null);
@@ -11,11 +10,6 @@ export default function UploadForm({ songId }: { songId: string }) {
   const [isUploading, setIsUploading] = useState(false);
   const router = useRouter();
   const { Toast, showSuccess, showError } = useToast();
-  const supabase = useMemo(() => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
-    const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
-    return createClient(url, anon);
-  }, []);
 
   async function handleUpload() {
     try {
@@ -32,9 +26,9 @@ export default function UploadForm({ songId }: { songId: string }) {
         const res = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(audioMeta) });
         if (!res.ok) throw new Error('sign failed');
         const data = await res.json();
-        // Use Supabase SDK to upload with the signed token
-        const up = await supabase.storage.from(data.bucket).uploadToSignedUrl(data.path, data.token, audioFile, { upsert: true, contentType: data.contentType });
-        if (up.error) throw new Error(`upload failed: ${up.error.message}`);
+        // Upload directly to signed URL (no client env needed)
+        const put = await fetch(data.url, { method: 'PUT', headers: { 'Content-Type': data.contentType, 'x-upsert': 'true' }, body: audioFile });
+        if (!put.ok) throw new Error('upload failed');
         didSomething = true;
         // Trigger preview generation server-side
         const trig = await fetch('/api/trigger-preview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bucket: data.bucket, path: data.path, size: audioFile.size }) });
@@ -51,8 +45,8 @@ export default function UploadForm({ songId }: { songId: string }) {
         const res = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(coverMeta) });
         if (!res.ok) throw new Error('cover sign failed');
         const data = await res.json();
-        const up = await supabase.storage.from(data.bucket).uploadToSignedUrl(data.path, data.token, coverFile, { upsert: true, contentType: data.contentType });
-        if (up.error) throw new Error(`cover upload failed: ${up.error.message}`);
+        const put = await fetch(data.url, { method: 'PUT', headers: { 'Content-Type': data.contentType, 'x-upsert': 'true' }, body: coverFile });
+        if (!put.ok) throw new Error('cover upload failed');
         didSomething = true;
       }
       if (didSomething) showSuccess('Uploaded');

@@ -16,6 +16,17 @@ interface StorageEventPayload {
   record: { bucket_id: string; name: string; size: number; metadata: Record<string, unknown> };
 }
 
+function parseDurationFromFfmpegLogLine(message: string): number | null {
+  // Example: "Duration: 00:03:42.12, start: 0.000000, bitrate: ..."
+  const m = message.match(/Duration:\s*(\d{2}):(\d{2}):(\d{2}\.\d{2})/);
+  if (!m) return null;
+  const hh = Number(m[1]);
+  const mm = Number(m[2]);
+  const ss = Number(m[3]);
+  if ([hh, mm, ss].some((n) => Number.isNaN(n))) return null;
+  return hh * 3600 + mm * 60 + ss;
+}
+
 async function transcodeAndComputePeaks(bytes: ArrayBuffer, durationSec = 30): Promise<{ mp3: Uint8Array | null; peaks: number[] | null; duration: number } | null> {
   try {
     // deno-lint-ignore no-explicit-any
@@ -28,9 +39,28 @@ async function transcodeAndComputePeaks(bytes: ArrayBuffer, durationSec = 30): P
     await ffmpeg.load();
     ffmpeg.FS('writeFile', 'input', new Uint8Array(bytes));
 
+    // Probe duration via logger parsing
+    let totalDurationSec: number | null = null;
+    // deno-lint-ignore no-explicit-any
+    (ffmpeg as any).setLogger?.(({ message }: { message: string }) => {
+      const d = parseDurationFromFfmpegLogLine(message);
+      if (d && !totalDurationSec) totalDurationSec = d;
+    });
+    try {
+      // This will error (no outputs), but logs include duration
+      await ffmpeg.run('-i', 'input');
+    } catch {
+      // ignore
+    }
+
+    const maxStart = totalDurationSec ? Math.max(0, totalDurationSec - durationSec) : 0;
+    const midpointStart = totalDurationSec ? Math.max(0, totalDurationSec / 2 - durationSec / 2) : 0;
+    const startAt = Math.min(maxStart, midpointStart);
+
     let mp3: Uint8Array | null = null;
     try {
       await ffmpeg.run(
+        '-ss', String(startAt),
         '-i', 'input',
         '-t', String(durationSec),
         '-vn',

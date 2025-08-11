@@ -16,32 +16,75 @@ interface StorageEventPayload {
   record: { bucket_id: string; name: string; size: number; metadata: Record<string, unknown> };
 }
 
-async function tryTranscodeToThirtySecondPreview(bytes: ArrayBuffer, durationSec = 30): Promise<Uint8Array | null> {
+async function transcodeAndComputePeaks(bytes: ArrayBuffer, durationSec = 30): Promise<{ mp3: Uint8Array | null; peaks: number[] | null; duration: number } | null> {
   try {
-    // Lazy import to avoid boot failures when ffmpeg is not supported in the runtime
     // deno-lint-ignore no-explicit-any
     const ff = await import('https://esm.sh/@ffmpeg/ffmpeg@0.12.7');
     const createFFmpeg = (ff as any).createFFmpeg as (opts: any) => any;
     const ffmpeg = createFFmpeg({
       log: false,
-      // Use a CDN-hosted core to avoid bundling large assets into the function itself
       corePath: 'https://unpkg.com/@ffmpeg/core@0.12.7/dist/ffmpeg-core.js',
     });
     await ffmpeg.load();
     ffmpeg.FS('writeFile', 'input', new Uint8Array(bytes));
-    // Re-encode to mp3 and trim to exact 30s for consistent playback
-    await ffmpeg.run(
-      '-i', 'input',
-      '-t', String(durationSec),
-      '-vn',
-      '-acodec', 'libmp3lame',
-      '-b:a', '128k',
-      'out.mp3'
-    );
-    const out: Uint8Array = ffmpeg.FS('readFile', 'out.mp3');
-    return out;
+
+    let mp3: Uint8Array | null = null;
+    try {
+      await ffmpeg.run(
+        '-i', 'input',
+        '-t', String(durationSec),
+        '-vn',
+        '-acodec', 'libmp3lame',
+        '-b:a', '128k',
+        'out.mp3'
+      );
+      mp3 = ffmpeg.FS('readFile', 'out.mp3');
+    } catch {
+      mp3 = null;
+    }
+
+    // Choose a source for peak analysis: the trimmed mp3 if available, else the input
+    const analysisSource = mp3 ? 'out.mp3' : 'input';
+    let peaks: number[] | null = null;
+    try {
+      // Decode to 8kHz mono raw PCM s16le limited to durationSec for consistent peak window
+      await ffmpeg.run(
+        '-i', analysisSource,
+        '-t', String(durationSec),
+        '-ac', '1',
+        '-ar', '8000',
+        '-f', 's16le',
+        'audio.pcm'
+      );
+      const pcm: Uint8Array = ffmpeg.FS('readFile', 'audio.pcm');
+      // Interpret as 16-bit little-endian signed samples
+      const view = new DataView(pcm.buffer, pcm.byteOffset, pcm.byteLength);
+      const numSamples = Math.floor(pcm.byteLength / 2);
+      const bucketCount = 400; // reasonable resolution for compact player
+      const samplesPerBucket = Math.max(1, Math.floor(numSamples / bucketCount));
+      const result: number[] = new Array(bucketCount).fill(0);
+      const int16Max = 32768;
+      for (let b = 0; b < bucketCount; b++) {
+        const start = b * samplesPerBucket;
+        const end = Math.min(numSamples, start + samplesPerBucket);
+        let sumSquares = 0;
+        let count = 0;
+        for (let i = start; i < end; i++) {
+          const sample = view.getInt16(i * 2, true);
+          const norm = sample / int16Max;
+          sumSquares += norm * norm;
+          count++;
+        }
+        const rms = count ? Math.sqrt(sumSquares / count) : 0;
+        result[b] = Number.isFinite(rms) ? Math.min(1, rms) : 0;
+      }
+      peaks = result;
+    } catch {
+      peaks = null;
+    }
+
+    return { mp3, peaks, duration: durationSec };
   } catch (_e) {
-    // Fall back to non-trimmed copy if ffmpeg is unavailable in this environment
     return null;
   }
 }
@@ -66,7 +109,8 @@ export default async function handler(req: Request) {
 
     const durationSec = Number(Deno.env.get('PREVIEW_DURATION_SECONDS') || 30) || 30;
     const inputBytes = await original.arrayBuffer();
-    const trimmed = await tryTranscodeToThirtySecondPreview(inputBytes, durationSec);
+    const tx = await transcodeAndComputePeaks(inputBytes, durationSec);
+    const trimmed = tx?.mp3 || null;
 
     // If trimming succeeded, upload MP3; else fall back to copying the original
     const previewBase = `${songId}/preview-${crypto.randomUUID()}`;
@@ -83,10 +127,16 @@ export default async function handler(req: Request) {
     const { data: pub } = supabase.storage.from('audio-previews').getPublicUrl(previewPath);
     const publicUrl = pub?.publicUrl ?? null;
 
-    const waveform = { peaks: [], duration: durationSec };
+    const waveform = {
+      peaks: tx?.peaks ?? Array.from({ length: 400 }, () => 0),
+      duration: durationSec,
+    };
 
     // Update DB row
-    const { error: rpcErr } = await supabase.from('songs').update({ preview_url: publicUrl || previewPath, waveform_json: waveform }).eq('id', songId);
+    const { error: rpcErr } = await supabase
+      .from('songs')
+      .update({ preview_url: publicUrl || previewPath, waveform_json: waveform })
+      .eq('id', songId);
     if (rpcErr) return new Response('db error', { status: 500 });
 
     return new Response('ok', { status: 200 });

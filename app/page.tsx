@@ -72,7 +72,7 @@ async function getData(searchParams: Record<string, string | string[] | undefine
       if (!s.previewUrl && s.audioUrl) {
         try {
           // Give originals a slightly longer TTL to reduce intermittent playback failures
-          const { data } = await supabase.storage.from('audio-originals').createSignedUrl(s.audioUrl, 300);
+          const { data } = await supabase.storage.from('audio-originals').createSignedUrl(s.audioUrl, 600);
           signedMap[s.id] = data?.signedUrl;
         } catch {}
       }

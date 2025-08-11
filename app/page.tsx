@@ -91,7 +91,7 @@ export default async function Page({ searchParams }: { searchParams: Record<stri
       <header className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Album Progress</h1>
-          <p className="text-slate-600">Public list of songs with secure 30s previews</p>
+          <p className="text-sm sm:text-base text-slate-600">Secure music management application.</p>
         </div>
         <div className="flex items-center gap-3">
           {role ? (

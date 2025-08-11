@@ -4,7 +4,7 @@ import { headers } from 'next/headers';
 
 export const metadata: Metadata = {
   title: 'Album Progress Tracker',
-  description: 'Track song progress with secure previews and tags',
+  description: 'Secure music management application.',
   viewport: 'width=device-width, initial-scale=1',
 };
 

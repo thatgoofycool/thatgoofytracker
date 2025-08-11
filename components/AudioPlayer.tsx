@@ -11,15 +11,15 @@ export default function AudioPlayer({ previewUrl, title }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0); // 0..1 relative to 30s cap
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const gainRef = useRef<GainNode | null>(null);
-  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const fadeTimerRef = useRef<number | null>(null);
+  const fadeRafRef = useRef<number | null>(null);
   const isFadingRef = useRef(false);
 
   useEffect(() => {
     if (!previewUrl) return;
     const audio = new Audio(previewUrl);
+    // Hint for cross-origin; not required when using element.volume fades, but harmless
+    try { (audio as any).crossOrigin = 'anonymous'; } catch {}
     audio.preload = 'none';
     audioRef.current = audio;
 
@@ -35,7 +35,7 @@ export default function AudioPlayer({ previewUrl, title }: Props) {
       // Trigger fade out slightly before the hard stop
       if (!isFadingRef.current && t >= Math.max(0, limit - FADE_SEC)) {
         isFadingRef.current = true;
-        fadeGainTo(0, FADE_SEC);
+        fadeVolumeTo(0, FADE_SEC * 1000);
         // Pause right after fade completes
         if (fadeTimerRef.current) window.clearTimeout(fadeTimerRef.current);
         fadeTimerRef.current = window.setTimeout(() => {
@@ -63,13 +63,8 @@ export default function AudioPlayer({ previewUrl, title }: Props) {
       if (fadeTimerRef.current) window.clearTimeout(fadeTimerRef.current);
       fadeTimerRef.current = null;
       isFadingRef.current = false;
-      // Tear down WebAudio graph
-      try { sourceRef.current?.disconnect(); } catch {}
-      try { gainRef.current?.disconnect(); } catch {}
-      try { audioCtxRef.current?.close(); } catch {}
-      sourceRef.current = null;
-      gainRef.current = null;
-      audioCtxRef.current = null;
+      if (fadeRafRef.current) cancelAnimationFrame(fadeRafRef.current);
+      fadeRafRef.current = null;
       audioRef.current = null;
     };
   }, [previewUrl]);
@@ -83,16 +78,15 @@ export default function AudioPlayer({ previewUrl, title }: Props) {
     if (!a) return;
     if (a.paused) {
       try {
-        await ensureAudioGraph(a);
-        // Fade in
-        setGainImmediately(0);
+        // Fade in using element volume
+        a.volume = 0;
         await a.play();
         isFadingRef.current = false;
-        fadeGainTo(1, 0.4);
+        fadeVolumeTo(1, 400);
       } catch {}
     } else {
       // Fade out then pause
-      fadeGainTo(0, 0.4);
+      fadeVolumeTo(0, 400);
       if (fadeTimerRef.current) window.clearTimeout(fadeTimerRef.current);
       fadeTimerRef.current = window.setTimeout(() => {
         try { a.pause(); } catch {}
@@ -100,41 +94,26 @@ export default function AudioPlayer({ previewUrl, title }: Props) {
     }
   };
 
-  function ensureAudioGraph(element: HTMLMediaElement) {
-    if (audioCtxRef.current && gainRef.current && sourceRef.current) return Promise.resolve();
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    audioCtxRef.current = ctx;
-    const source = ctx.createMediaElementSource(element as HTMLAudioElement);
-    const gain = ctx.createGain();
-    source.connect(gain).connect(ctx.destination);
-    sourceRef.current = source;
-    gainRef.current = gain;
-    if (ctx.state === 'suspended') return ctx.resume();
-    return Promise.resolve();
-  }
-
-  function setGainImmediately(value: number) {
-    const ctx = audioCtxRef.current;
-    const gain = gainRef.current;
-    if (!ctx || !gain) return;
-    const t = ctx.currentTime;
-    try {
-      gain.gain.cancelScheduledValues(t);
-      gain.gain.setValueAtTime(value, t);
-    } catch {}
-  }
-
-  function fadeGainTo(target: number, seconds: number) {
-    const ctx = audioCtxRef.current;
-    const gain = gainRef.current;
-    if (!ctx || !gain) return;
-    const now = ctx.currentTime;
-    try {
-      const current = gain.gain.value;
-      gain.gain.cancelScheduledValues(now);
-      gain.gain.setValueAtTime(current, now);
-      gain.gain.linearRampToValueAtTime(target, now + Math.max(0.01, seconds));
-    } catch {}
+  function fadeVolumeTo(target: number, durationMs: number) {
+    const a = audioRef.current;
+    if (!a) return;
+    if (fadeRafRef.current) cancelAnimationFrame(fadeRafRef.current);
+    const start = performance.now();
+    const from = a.volume;
+    const to = Math.max(0, Math.min(1, target));
+    const dur = Math.max(0, durationMs);
+    const step = (now: number) => {
+      const elapsed = now - start;
+      const t = dur === 0 ? 1 : Math.min(1, elapsed / dur);
+      const value = from + (to - from) * t;
+      a.volume = value;
+      if (t < 1) {
+        fadeRafRef.current = requestAnimationFrame(step);
+      } else {
+        fadeRafRef.current = null;
+      }
+    };
+    fadeRafRef.current = requestAnimationFrame(step);
   }
 
   // Circular progress ring geometry

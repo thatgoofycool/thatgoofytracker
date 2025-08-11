@@ -137,13 +137,13 @@ export default async function Page({ searchParams }: { searchParams: Record<stri
                   <p className="mt-1 text-xs text-slate-500">Updated: {new Date(song.updatedAt as unknown as string).toLocaleString()}</p>
                 ) : null}
               </div>
-              <div className="w-full max-w-[360px]">
-                <div className="flex items-start gap-3 justify-between">
+              <div className="w-full max-w-[300px]">
+                <div className="flex items-center gap-3 justify-end">
                   { (song as any).coverUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={(song as any).coverUrl as string} alt="Cover art" className="w-16 h-16 object-cover rounded" />
+                    <img src={(song as any).coverUrl as string} alt="Cover art" className="w-14 h-14 object-cover rounded" />
                   ) : null }
-                  <div className="flex-1 min-w-0">
+                  <div className="min-w-0">
                     {song.previewUrl ? (
                       <Suspense fallback={<div className="h-[64px] w-full bg-slate-100 animate-pulse rounded-md" />}>
                         <AudioPlayer previewUrl={song.previewUrl || undefined} waveform={song.waveformJson as any} title={song.title} />
@@ -151,9 +151,6 @@ export default async function Page({ searchParams }: { searchParams: Record<stri
                     ) : (
                       <div className="text-sm text-slate-500">No preview available</div>
                     )}
-                  </div>
-                  <div className="ml-3 flex items-center">
-                    {/* Ensure the circular control sits at the right edge */}
                   </div>
                 </div>
               </div>

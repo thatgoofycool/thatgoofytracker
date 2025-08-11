@@ -21,13 +21,10 @@ export default async function AdminPage() {
 
   const list = await db.select().from(songs).orderBy(desc(songs.updatedAt));
   const tagsList = await db.select().from(tags);
-  const songTagRows = list.length ? await db.select().from(songTags).where(eq(songTags.songId, list[0].id)).then(async () => {
-    // fetch all mapping for list ids
-    const ids = list.map((s) => s.id);
-    // drizzle lacks where in multiple eq easily; make a simple raw in loop (not raw SQL). We'll fetch all and filter.
-    // For simplicity in this minimal admin view, do a naive fetch of all tag relations.
-    return await db.select().from(songTags);
-  }) : [];
+  // Only pull tag relations for the current song IDs to avoid stale/misaligned mapping
+  const ids = list.map((s) => s.id);
+  const allSongTags = ids.length ? await db.select().from(songTags) : [];
+  const songTagRows = allSongTags.filter((r) => ids.includes(r.songId));
   const tagMap = new Map<string, Set<string>>();
   for (const r of songTagRows) {
     const set = tagMap.get(r.songId) || new Set<string>();

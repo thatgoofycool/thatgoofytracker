@@ -22,10 +22,17 @@ export async function POST(req: NextRequest) {
 
   const payload = { type: 'INSERT', table: 'storage.objects', record: { bucket_id: bucket, name: path, size: Number(size || 0), metadata: {} } };
   try {
-    const res = await fetch(fnUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceRole}` }, body: JSON.stringify(payload) });
-    const text = await res.text();
-    if (!res.ok) return NextResponse.json({ error: 'Function error', status: res.status, body: text }, { status: 500 });
-    return NextResponse.json({ ok: true, body: text });
+    // Fire-and-forget to avoid blocking UI; short timeout
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 15000);
+    fetch(fnUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceRole}` },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+      keepalive: true,
+    }).catch(() => {});
+    return NextResponse.json({ ok: true });
   } catch (e: any) {
     return NextResponse.json({ error: 'Request failed', message: String(e?.message || e) }, { status: 500 });
   }

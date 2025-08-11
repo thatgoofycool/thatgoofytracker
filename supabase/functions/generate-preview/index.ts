@@ -33,7 +33,7 @@ async function transcodeAndComputePeaks(bytes: ArrayBuffer, durationSec = 30): P
     const ff = await import('https://esm.sh/@ffmpeg/ffmpeg@0.12.7');
     const createFFmpeg = (ff as any).createFFmpeg as (opts: any) => any;
     const ffmpeg = createFFmpeg({
-      log: false,
+      log: true,
       corePath: 'https://unpkg.com/@ffmpeg/core@0.12.7/dist/ffmpeg-core.js',
     });
     await ffmpeg.load();
@@ -78,14 +78,27 @@ async function transcodeAndComputePeaks(bytes: ArrayBuffer, durationSec = 30): P
     let peaks: number[] | null = null;
     try {
       // Decode to 8kHz mono raw PCM s16le limited to durationSec for consistent peak window
-      await ffmpeg.run(
-        '-i', analysisSource,
-        '-t', String(durationSec),
-        '-ac', '1',
-        '-ar', '8000',
-        '-f', 's16le',
-        'audio.pcm'
-      );
+      // If trimming failed (analysisSource === 'input'), also seek to the midpoint
+      if (!mp3 && totalDurationSec) {
+        await ffmpeg.run(
+          '-ss', String(startAt),
+          '-i', analysisSource,
+          '-t', String(durationSec),
+          '-ac', '1',
+          '-ar', '8000',
+          '-f', 's16le',
+          'audio.pcm'
+        );
+      } else {
+        await ffmpeg.run(
+          '-i', analysisSource,
+          '-t', String(durationSec),
+          '-ac', '1',
+          '-ar', '8000',
+          '-f', 's16le',
+          'audio.pcm'
+        );
+      }
       const pcm: Uint8Array = ffmpeg.FS('readFile', 'audio.pcm');
       // Interpret as 16-bit little-endian signed samples
       const view = new DataView(pcm.buffer, pcm.byteOffset, pcm.byteLength);

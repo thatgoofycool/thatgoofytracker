@@ -60,9 +60,15 @@ export default function UploadForm({ songId }: { songId: string }) {
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <input className="text-sm" type="file" accept="audio/wav,audio/x-wav,audio/aiff,audio/x-aiff,audio/mpeg,audio/mp4,audio/x-m4a,audio/m4a" onChange={(e) => setAudioFile(e.target.files?.[0] || null)} />
-      <input className="text-sm" type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setCoverFile(e.target.files?.[0] || null)} />
+    <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex items-center gap-2">
+        <label className="text-xs font-medium text-slate-700">Audio file</label>
+        <input className="text-sm" type="file" accept="audio/wav,audio/x-wav,audio/aiff,audio/x-aiff,audio/mpeg,audio/mp4,audio/x-m4a,audio/m4a" onChange={(e) => setAudioFile(e.target.files?.[0] || null)} />
+      </div>
+      <div className="flex items-center gap-2">
+        <label className="text-xs font-medium text-slate-700">Cover art</label>
+        <input className="text-sm" type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setCoverFile(e.target.files?.[0] || null)} />
+      </div>
       <button
         onClick={handleUpload}
         disabled={isUploading || (!audioFile && !coverFile)}

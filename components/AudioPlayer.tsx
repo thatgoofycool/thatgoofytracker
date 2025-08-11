@@ -121,8 +121,8 @@ export default function AudioPlayer({ previewUrl, title }: Props) {
   }
 
   // Circular progress ring geometry
-  const size = 92; // SVG viewport size
-  const stroke = 4;
+  const size = 100; // SVG viewport size slightly larger for thicker ring
+  const stroke = 8; // thicker ring for easier interaction
   const r = (size - stroke) / 2; // radius
   const c = 2 * Math.PI * r; // circumference
   const dashoffset = c * (1 - progress);
@@ -139,8 +139,9 @@ export default function AudioPlayer({ previewUrl, title }: Props) {
     const dx = x - cx;
     const dy = y - cy;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    // Only respond when clicking near the ring (±8px around r)
-    if (dist < r - 8 || dist > r + 8) return;
+    // Only respond when clicking near the ring (band around r)
+    const band = Math.max(10, stroke * 1.25);
+    if (dist < r - band || dist > r + band) return;
     // Convert to angle fraction, accounting for -90deg rotation (top = 0)
     let theta = Math.atan2(dy, dx); // [-pi, pi], 0 at +X
     if (theta < 0) theta += Math.PI * 2; // [0, 2pi)
@@ -191,8 +192,8 @@ export default function AudioPlayer({ previewUrl, title }: Props) {
           type="button"
           onClick={toggle}
           aria-label={isPlaying ? 'Pause preview' : 'Play preview'}
-          className={`relative w-20 h-20 rounded-full flex items-center justify-center border ${isPlaying ? 'border-black' : 'border-slate-300'} bg-white hover:bg-slate-50`}
-          style={{ left: (size - 80) / 2, top: (size - 80) / 2, position: 'absolute' }}
+          className={`relative w-18 h-18 rounded-full flex items-center justify-center border ${isPlaying ? 'border-black' : 'border-slate-300'} bg-white hover:bg-slate-50`}
+          style={{ left: (size - 72) / 2, top: (size - 72) / 2, width: 72, height: 72, position: 'absolute' }}
         >
           {isPlaying ? (
             <div className="flex items-end gap-[3px] h-6" aria-hidden>

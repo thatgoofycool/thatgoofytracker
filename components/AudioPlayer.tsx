@@ -10,6 +10,7 @@ type Props = {
 export default function AudioPlayer({ previewUrl, title }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0); // 0..1 relative to 30s cap
 
   useEffect(() => {
     if (!previewUrl) return;
@@ -24,7 +25,10 @@ export default function AudioPlayer({ previewUrl, title }: Props) {
       const limit = Math.min(30, isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 30);
       if (audio.currentTime >= limit) {
         audio.pause();
+        setProgress(1);
+        return;
       }
+      setProgress(Math.max(0, Math.min(1, audio.currentTime / limit)));
     };
     audio.addEventListener('ended', onEnded);
     audio.addEventListener('pause', onPause);
@@ -59,28 +63,65 @@ export default function AudioPlayer({ previewUrl, title }: Props) {
     }
   };
 
+  // Circular progress ring geometry
+  const size = 92; // SVG viewport size
+  const stroke = 4;
+  const r = (size - stroke) / 2; // radius
+  const c = 2 * Math.PI * r; // circumference
+  const dashoffset = c * (1 - progress);
+
   return (
     <div className="w-full">
-      <button
-        type="button"
-        onClick={toggle}
-        aria-label={isPlaying ? 'Pause preview' : 'Play preview'}
-        className={`relative w-20 h-20 rounded-full flex items-center justify-center border ${isPlaying ? 'border-sky-500' : 'border-slate-300'} bg-white hover:bg-slate-50`}
-      >
-        {isPlaying ? (
-          <div className="flex items-end gap-[3px] h-6" aria-hidden>
-            <span className="w-[4px] bg-sky-500 animate-eq1 rounded-sm" />
-            <span className="w-[4px] bg-sky-500 animate-eq2 rounded-sm" />
-            <span className="w-[4px] bg-sky-500 animate-eq3 rounded-sm" />
-            <span className="w-[4px] bg-sky-500 animate-eq2 rounded-sm" />
-            <span className="w-[4px] bg-sky-500 animate-eq1 rounded-sm" />
-          </div>
-        ) : (
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path d="M8 5v14l11-7-11-7z" fill="#0ea5e9" />
-          </svg>
-        )}
-      </button>
+      <div className="relative inline-block" style={{ width: size, height: size }}>
+        <svg
+          className="absolute inset-0 -rotate-90"
+          width={size}
+          height={size}
+          viewBox={`0 0 ${size} ${size}`}
+          aria-hidden
+        >
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke="#e5e7eb" /* slate-200 */
+            strokeWidth={stroke}
+          />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke="#000000"
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={c}
+            strokeDashoffset={dashoffset}
+          />
+        </svg>
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={isPlaying ? 'Pause preview' : 'Play preview'}
+          className={`relative w-20 h-20 rounded-full flex items-center justify-center border ${isPlaying ? 'border-black' : 'border-slate-300'} bg-white hover:bg-slate-50`}
+          style={{ left: (size - 80) / 2, top: (size - 80) / 2, position: 'absolute' }}
+        >
+          {isPlaying ? (
+            <div className="flex items-end gap-[3px] h-6" aria-hidden>
+              <span className="w-[4px] bg-black animate-eq1 rounded-sm" />
+              <span className="w-[4px] bg-black animate-eq2 rounded-sm" />
+              <span className="w-[4px] bg-black animate-eq3 rounded-sm" />
+              <span className="w-[4px] bg-black animate-eq2 rounded-sm" />
+              <span className="w-[4px] bg-black animate-eq1 rounded-sm" />
+            </div>
+          ) : (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path d="M8 5v14l11-7-11-7z" fill="#000000" />
+            </svg>
+          )}
+        </button>
+      </div>
       <style jsx>{`
         @keyframes eq {
           0%, 100% { height: 6px; }

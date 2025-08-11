@@ -1,7 +1,5 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
-import type { KeyboardEvent } from 'react';
-import WaveSurfer from 'wavesurfer.js';
 
 type Props = {
   previewUrl?: string;
@@ -9,87 +7,39 @@ type Props = {
   title: string;
 };
 
-export default function AudioPlayer({ previewUrl, waveform, title }: Props) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const wavesurferRef = useRef<WaveSurfer | null>(null);
+export default function AudioPlayer({ previewUrl, title }: Props) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0); // 0..1 relative to 30s cap
 
   useEffect(() => {
-    if (!containerRef.current || !previewUrl) return;
-    const ws = WaveSurfer.create({
-      container: containerRef.current,
-      waveColor: '#94a3b8',
-      progressColor: '#0ea5e9',
-      height: 64,
-      normalize: true,
-      interact: true,
-      cursorWidth: 1,
-      barWidth: 2,
-      barGap: 1,
-    });
+    if (!previewUrl) return;
+    const audio = new Audio(previewUrl);
+    audio.preload = 'none';
+    audioRef.current = audio;
 
-    let loadPromise: Promise<unknown> | null = null;
-    if (waveform?.peaks && waveform.peaks.length) {
-      loadPromise = ws.load(previewUrl, [waveform.peaks] as any, waveform.duration || undefined) as unknown as Promise<unknown>;
-    } else {
-      loadPromise = ws.load(previewUrl) as unknown as Promise<unknown>;
-    }
-    // Ensure aborted loads on teardown do not surface as unhandled rejections
-    loadPromise?.catch(() => {});
-
-    // Swallow internal fetch abort errors on teardown
-    const onError = (_: unknown) => {};
-    ws.on('error', onError as any);
-
-    const onPlay = () => setIsPlaying(true);
+    const onEnded = () => setIsPlaying(false);
     const onPause = () => setIsPlaying(false);
-    const onFinish = () => {
-      setIsPlaying(false);
-      setProgress(0);
+    const onPlay = () => setIsPlaying(true);
+    const onTime = () => {
+      const limit = Math.min(30, isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 30);
+      if (audio.currentTime >= limit) {
+        audio.pause();
+      }
     };
-    ws.on('play', onPlay);
-    ws.on('pause', onPause);
-    ws.on('finish', onFinish);
+    audio.addEventListener('ended', onEnded);
+    audio.addEventListener('pause', onPause);
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('timeupdate', onTime);
 
-    wavesurferRef.current = ws;
     return () => {
       try {
-        ws.un('error', onError as any);
-        ws.un('play', onPlay);
-        ws.un('pause', onPause);
-        ws.un('finish', onFinish);
-        // Guard destroy during React strict-mode double invoke / load aborts
-        // Delay to allow fetch abort to settle
-        setTimeout(() => {
-          try { (ws as any)?.destroy?.(); } catch {}
-        }, 0);
+        audio.pause();
       } catch {}
-      wavesurferRef.current = null;
-    };
-  }, [previewUrl]);
-
-  useEffect(() => {
-    // Enforce 30s cap and drive progress bar
-    const ws = wavesurferRef.current;
-    if (!ws) return;
-    const onReady = () => {
-      const limit = Math.min(30, ws.getDuration());
-      const onProcess = () => {
-        const t = ws.getCurrentTime();
-        if (t >= limit) {
-          ws.pause();
-        }
-        setProgress(limit > 0 ? Math.min(1, t / limit) : 0);
-      };
-      ws.on('audioprocess', onProcess);
-      return () => {
-        ws.un('audioprocess', onProcess);
-      };
-    };
-    ws.on('ready', onReady);
-    return () => {
-      ws.un('ready', onReady);
+      audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('pause', onPause);
+      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener('timeupdate', onTime);
+      audioRef.current = null;
     };
   }, [previewUrl]);
 
@@ -97,53 +47,50 @@ export default function AudioPlayer({ previewUrl, waveform, title }: Props) {
     return <div className="text-sm text-slate-500">No preview available</div>;
   }
 
-  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    const ws = wavesurferRef.current;
-    if (!ws) return;
-    if (e.code === 'Space' || e.key.toLowerCase() === 'k') {
-      e.preventDefault();
-      ws.playPause();
-    } else if (e.key === 'ArrowRight') {
-      e.preventDefault();
-      const t = ws.getCurrentTime();
-      ws.setTime(t + 5);
-    } else if (e.key === 'ArrowLeft') {
-      e.preventDefault();
-      const t = ws.getCurrentTime();
-      ws.setTime(Math.max(0, t - 5));
-    } else if (e.key === 'Home') {
-      e.preventDefault();
-      ws.seekTo(0);
-    } else if (e.key === 'End') {
-      e.preventDefault();
-      ws.seekTo(1);
+  const toggle = async () => {
+    const a = audioRef.current;
+    if (!a) return;
+    if (a.paused) {
+      try {
+        await a.play();
+      } catch {}
+    } else {
+      a.pause();
     }
   };
 
   return (
-    <div className="w-full" tabIndex={0} onKeyDown={onKeyDown} aria-label={`Audio controls for ${title}`}>
-      <div ref={containerRef} aria-label={`Waveform for ${title}`} className="rounded-md overflow-hidden" />
-      <div className="mt-2 h-1.5 w-full bg-slate-200 rounded">
-        <div className="h-1.5 bg-sky-500 rounded" style={{ width: `${Math.round(progress * 100)}%` }} aria-label="Playback progress" />
-      </div>
-      <div className="mt-2 flex items-center gap-2">
-        <button
-          className="px-3 py-1.5 rounded-md border border-slate-300 hover:bg-slate-50"
-          type="button"
-          onClick={() => wavesurferRef.current?.playPause()}
-          aria-label={isPlaying ? 'Pause preview' : 'Play preview'}
-        >
-          {isPlaying ? 'Pause' : 'Play'}
-        </button>
-        <button
-          className="px-3 py-1.5 rounded-md border border-slate-300 hover:bg-slate-50"
-          type="button"
-          onClick={() => { if (wavesurferRef.current) wavesurferRef.current.seekTo(0); }}
-          aria-label="Restart preview"
-        >
-          Restart
-        </button>
-      </div>
+    <div className="w-full">
+      <button
+        type="button"
+        onClick={toggle}
+        aria-label={isPlaying ? 'Pause preview' : 'Play preview'}
+        className={`relative w-20 h-20 rounded-full flex items-center justify-center border ${isPlaying ? 'border-sky-500' : 'border-slate-300'} bg-white hover:bg-slate-50`}
+      >
+        {isPlaying ? (
+          <div className="flex items-end gap-[3px] h-6" aria-hidden>
+            <span className="w-[4px] bg-sky-500 animate-eq1 rounded-sm" />
+            <span className="w-[4px] bg-sky-500 animate-eq2 rounded-sm" />
+            <span className="w-[4px] bg-sky-500 animate-eq3 rounded-sm" />
+            <span className="w-[4px] bg-sky-500 animate-eq2 rounded-sm" />
+            <span className="w-[4px] bg-sky-500 animate-eq1 rounded-sm" />
+          </div>
+        ) : (
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path d="M8 5v14l11-7-11-7z" fill="#0ea5e9" />
+          </svg>
+        )}
+      </button>
+      <style jsx>{`
+        @keyframes eq {
+          0%, 100% { height: 6px; }
+          50% { height: 24px; }
+        }
+        .animate-eq1 { animation: eq 1s ease-in-out infinite; }
+        .animate-eq2 { animation: eq 0.9s ease-in-out infinite; animation-delay: 0.1s; }
+        .animate-eq3 { animation: eq 0.8s ease-in-out infinite; animation-delay: 0.2s; }
+      `}</style>
+      <div className="sr-only" aria-live="polite">{isPlaying ? `${title} playing` : `${title} paused`}</div>
     </div>
   );
 }

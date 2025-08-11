@@ -36,7 +36,12 @@ async function transcodeAndComputePeaks(bytes: ArrayBuffer, durationSec = 30): P
       log: true,
       corePath: 'https://unpkg.com/@ffmpeg/core@0.12.7/dist/ffmpeg-core.js',
     });
-    await ffmpeg.load();
+    // Bound ffmpeg load to avoid 504s on cold start
+    const LOAD_TIMEOUT_MS = Number(Deno.env.get('FFMPEG_LOAD_TIMEOUT_MS') || 10000);
+    await Promise.race([
+      ffmpeg.load(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('ffmpeg_load_timeout')), LOAD_TIMEOUT_MS)),
+    ]);
     ffmpeg.FS('writeFile', 'input', new Uint8Array(bytes));
 
     // Probe duration via logger parsing
@@ -85,7 +90,7 @@ async function transcodeAndComputePeaks(bytes: ArrayBuffer, durationSec = 30): P
           '-i', analysisSource,
           '-t', String(durationSec),
           '-ac', '1',
-          '-ar', '8000',
+          '-ar', '4000',
           '-f', 's16le',
           'audio.pcm'
         );
@@ -94,7 +99,7 @@ async function transcodeAndComputePeaks(bytes: ArrayBuffer, durationSec = 30): P
           '-i', analysisSource,
           '-t', String(durationSec),
           '-ac', '1',
-          '-ar', '8000',
+          '-ar', '4000',
           '-f', 's16le',
           'audio.pcm'
         );
@@ -103,7 +108,7 @@ async function transcodeAndComputePeaks(bytes: ArrayBuffer, durationSec = 30): P
       // Interpret as 16-bit little-endian signed samples
       const view = new DataView(pcm.buffer, pcm.byteOffset, pcm.byteLength);
       const numSamples = Math.floor(pcm.byteLength / 2);
-      const bucketCount = 400; // reasonable resolution for compact player
+      const bucketCount = 200; // faster and still smooth enough
       const samplesPerBucket = Math.max(1, Math.floor(numSamples / bucketCount));
       const result: number[] = new Array(bucketCount).fill(0);
       const int16Max = 32768;
@@ -122,7 +127,8 @@ async function transcodeAndComputePeaks(bytes: ArrayBuffer, durationSec = 30): P
         result[b] = Number.isFinite(rms) ? Math.min(1, rms) : 0;
       }
       peaks = result;
-    } catch {
+    } catch (e) {
+      // If ffmpeg failed (including load timeout), fall back to placeholder peaks
       peaks = null;
     }
 

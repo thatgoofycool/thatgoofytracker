@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
+import type { KeyboardEvent } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 
 type Props = {
@@ -70,12 +71,8 @@ export default function AudioPlayer({ previewUrl, waveform, title }: Props) {
         setProgress(limit > 0 ? Math.min(1, t / limit) : 0);
       };
       ws.on('audioprocess', onProcess);
-      // Also update progress when seeking
-      const onSeek = (p: number) => setProgress(p);
-      ws.on('seek', onSeek as any);
       return () => {
         ws.un('audioprocess', onProcess);
-        ws.un('seek', onSeek as any);
       };
     };
     ws.on('ready', onReady);
@@ -88,7 +85,7 @@ export default function AudioPlayer({ previewUrl, waveform, title }: Props) {
     return <div className="text-sm text-slate-500">No preview available</div>;
   }
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const ws = wavesurferRef.current;
     if (!ws) return;
     if (e.code === 'Space' || e.key.toLowerCase() === 'k') {

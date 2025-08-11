@@ -106,10 +106,13 @@ export default function AudioPlayer({ previewUrl, title }: Props) {
       const elapsed = now - start;
       const t = dur === 0 ? 1 : Math.min(1, elapsed / dur);
       const value = from + (to - from) * t;
-      a.volume = value;
+      // Clamp to [0,1] to avoid IndexSizeError
+      a.volume = Math.max(0, Math.min(1, value));
       if (t < 1) {
         fadeRafRef.current = requestAnimationFrame(step);
       } else {
+        // Ensure final exact target
+        a.volume = to;
         fadeRafRef.current = null;
       }
     };

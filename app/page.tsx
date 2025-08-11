@@ -87,7 +87,7 @@ export default async function Page({ searchParams }: { searchParams: Record<stri
   const role = session?.user?.role;
   const tagsList = await db.select().from(tags);
   return (
-    <main className="max-w-6xl mx-auto p-4 sm:p-6">
+    <main className="max-w-4xl mx-auto p-4 sm:p-6">
       <header className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Album Progress</h1>
@@ -137,11 +137,11 @@ export default async function Page({ searchParams }: { searchParams: Record<stri
                   <p className="mt-1 text-xs text-slate-500">Updated: {new Date(song.updatedAt as unknown as string).toLocaleString()}</p>
                 ) : null}
               </div>
-              <div className="w-full max-w-[300px]">
+              <div className="w-full max-w-[280px]">
                 <div className="flex items-center gap-3 justify-end">
                   { (song as any).coverUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={(song as any).coverUrl as string} alt="Cover art" className="w-14 h-14 object-cover rounded" />
+                    <img src={(song as any).coverUrl as string} alt="Cover art" className="w-20 h-20 object-cover rounded" />
                   ) : null }
                   <div className="min-w-0">
                     {song.previewUrl ? (

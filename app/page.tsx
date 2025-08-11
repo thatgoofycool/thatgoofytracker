@@ -114,10 +114,10 @@ export default async function Page({ searchParams }: { searchParams: Record<stri
           <p className="text-sm sm:text-base text-slate-600">Secure music management application.</p>
         </div>
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           {role ? (
             <Link className="px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100" href="/admin">Admin</Link>
           ) : null}
-          <ThemeToggle />
           <AuthButtons signedIn={Boolean(role)} />
         </div>
       </header>

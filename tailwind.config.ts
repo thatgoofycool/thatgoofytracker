@@ -9,7 +9,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      colors: {}
+      colors: {},
+      fontFamily: {
+        sans: ['var(--font-sans)', 'system-ui', 'ui-sans-serif', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial'],
+      }
     },
   },
   plugins: [],

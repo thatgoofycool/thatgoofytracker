@@ -140,8 +140,8 @@ export default async function AdminPage() {
       <header className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">Admin</h1>
         <div className="flex items-center gap-3">
-          <Link className="px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100" href="/">Back</Link>
           <ThemeToggle />
+          <Link className="px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100" href="/">Back</Link>
           <AuthButtons signedIn={true} />
         </div>
       </header>

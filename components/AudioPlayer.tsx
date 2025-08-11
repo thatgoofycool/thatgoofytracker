@@ -14,13 +14,14 @@ export default function AudioPlayer({ previewUrl, title }: Props) {
   const fadeTimerRef = useRef<number | null>(null);
   const fadeRafRef = useRef<number | null>(null);
   const isFadingRef = useRef(false);
+  const ringRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!previewUrl) return;
     const audio = new Audio(previewUrl);
     // Hint for cross-origin; not required when using element.volume fades, but harmless
     try { (audio as any).crossOrigin = 'anonymous'; } catch {}
-    audio.preload = 'none';
+    audio.preload = 'metadata';
     audioRef.current = audio;
 
     const onEnded = () => setIsPlaying(false);
@@ -126,9 +127,39 @@ export default function AudioPlayer({ previewUrl, title }: Props) {
   const c = 2 * Math.PI * r; // circumference
   const dashoffset = c * (1 - progress);
 
+  function handleRingPointer(e: React.PointerEvent<HTMLDivElement>) {
+    const wrapper = ringRef.current;
+    const a = audioRef.current;
+    if (!wrapper || !a) return;
+    const rect = wrapper.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const cx = size / 2;
+    const cy = size / 2;
+    const dx = x - cx;
+    const dy = y - cy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    // Only respond when clicking near the ring (±8px around r)
+    if (dist < r - 8 || dist > r + 8) return;
+    // Convert to angle fraction, accounting for -90deg rotation (top = 0)
+    let theta = Math.atan2(dy, dx); // [-pi, pi], 0 at +X
+    if (theta < 0) theta += Math.PI * 2; // [0, 2pi)
+    const fraction = ((theta + Math.PI / 2) % (Math.PI * 2)) / (Math.PI * 2); // 0 at top, clockwise
+    const limit = Math.min(30, isFinite(a.duration) && a.duration > 0 ? a.duration : 30);
+    try {
+      a.currentTime = Math.max(0, Math.min(limit, fraction * limit));
+      setProgress(Math.max(0, Math.min(1, fraction)));
+    } catch {}
+  }
+
   return (
     <div className="w-full">
-      <div className="relative inline-block" style={{ width: size, height: size }}>
+      <div
+        ref={ringRef}
+        className="relative inline-block"
+        style={{ width: size, height: size }}
+        onPointerDown={handleRingPointer}
+      >
         <svg
           className="absolute inset-0 -rotate-90"
           width={size}

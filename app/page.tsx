@@ -24,7 +24,22 @@ async function getData(searchParams: Record<string, string | string[] | undefine
   const where = [] as any[];
   if (q) where.push(ilike(songs.title, `%${q}%`));
   if (status) where.push(eq(songs.status, status));
-  let baseQuery = db.select().from(songs);
+  const baseSelect = {
+    id: songs.id,
+    title: songs.title,
+    slug: songs.slug,
+    description: songs.description,
+    bpm: songs.bpm,
+    key: songs.key,
+    status: songs.status,
+    previewUrl: songs.previewUrl,
+    audioUrl: songs.audioUrl,
+    coverUrl: songs.coverUrl,
+    waveformJson: songs.waveformJson,
+    createdAt: songs.createdAt,
+    updatedAt: songs.updatedAt,
+  };
+  let baseQuery = db.select(baseSelect).from(songs);
   if (where.length) {
     // @ts-expect-error drizzle type narrowing
     baseQuery = baseQuery.where(and(...where));
@@ -108,8 +123,8 @@ export default async function Page({ searchParams }: { searchParams: Record<stri
       </header>
 
       <form className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3" method="get">
-        <input className="w-full rounded-md border border-slate-300 px-3 py-2" type="text" name="q" placeholder="Search title" defaultValue={(searchParams.q as string) || ''} aria-label="Search title" />
-        <select className="w-full rounded-md border border-slate-300 px-3 py-2" name="status" defaultValue={(searchParams.status as string) || ''} aria-label="Filter by status">
+        <input className="w-full rounded-md border border-slate-300 px-3 py-2 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700" type="text" name="q" placeholder="Search title" defaultValue={(searchParams.q as string) || ''} aria-label="Search title" />
+        <select className="w-full rounded-md border border-slate-300 px-3 py-2 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700" name="status" defaultValue={(searchParams.status as string) || ''} aria-label="Filter by status">
           <option value="">All statuses</option>
           <option value="draft">Draft</option>
           <option value="in_progress">In Progress</option>
@@ -129,7 +144,7 @@ export default async function Page({ searchParams }: { searchParams: Record<stri
 
       <ul className="mt-8 space-y-6">
         {data.map((song) => (
-          <li key={song.id} className="rounded-xl border border-slate-200 p-4">
+          <li key={song.id} className="rounded-xl border border-slate-200 p-4 dark:border-slate-700 dark:bg-slate-900">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-medium">{song.title}</h2>

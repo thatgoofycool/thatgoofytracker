@@ -20,7 +20,26 @@ export default async function AdminPage() {
   const session = await getServerSession(authOptions);
   if (!assertRole(session?.user?.role, ['admin', 'editor'])) redirect('/');
 
-  const list = await db.select().from(songs).orderBy(desc(songs.updatedAt));
+  const list = await db
+    .select({
+      id: songs.id,
+      title: songs.title,
+      slug: songs.slug,
+      description: songs.description,
+      bpm: songs.bpm,
+      key: songs.key,
+      status: songs.status,
+      previewUrl: songs.previewUrl,
+      audioUrl: songs.audioUrl,
+      audioOriginalName: (songs as any).audioOriginalName,
+      coverUrl: songs.coverUrl,
+      coverOriginalName: (songs as any).coverOriginalName,
+      waveformJson: songs.waveformJson,
+      createdAt: songs.createdAt,
+      updatedAt: songs.updatedAt,
+    })
+    .from(songs)
+    .orderBy(desc(songs.updatedAt));
   const tagsList = await db.select().from(tags);
   // Only pull tag relations for the current song IDs to avoid stale/misaligned mapping
   const ids = list.map((s) => s.id);
@@ -169,13 +188,13 @@ export default async function AdminPage() {
 
 function AdminSongRow({ song, tags, selectedTagIds, requestUpload, updateSong, deleteSong, assignTags }: { song: any; tags: any[]; selectedTagIds: string[]; requestUpload: (fd: FormData) => Promise<void>; updateSong: (fd: FormData) => Promise<void>; deleteSong: (fd: FormData) => Promise<void>; assignTags: (fd: FormData) => Promise<void> }) {
   return (
-    <div className="rounded-lg border border-slate-200 p-3 flex flex-col gap-3">
+    <div className="rounded-lg border border-slate-200 p-3 flex flex-col gap-3 dark:border-slate-700 dark:bg-slate-900">
       <div className="flex items-center justify-between">
         <div>
           <div className="font-medium">{song.title}</div>
           <div className="text-xs text-slate-600">{song.status}</div>
         </div>
-        <Link className="px-3 py-1.5 rounded-md border border-slate-300" href={`/api/songs/${song.id}`}>Edit API</Link>
+        <Link className="px-3 py-1.5 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100" href={`/api/songs/${song.id}`}>Edit API</Link>
       </div>
       <form
         action={async (fd: FormData) => {
@@ -198,7 +217,7 @@ function AdminSongRow({ song, tags, selectedTagIds, requestUpload, updateSong, d
             <option value="mastering">Mastering</option>
             <option value="done">Done</option>
           </select>
-        <SubmitButton className="px-3 py-1.5 rounded-md border border-slate-300 hover:bg-slate-50 active:scale-95 transition" pendingText="Saving..." ariaLabel="Save changes">Save</SubmitButton>
+        <SubmitButton className="px-3 py-1.5 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-900 active:scale-95 transition dark:border-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100" pendingText="Saving..." ariaLabel="Save changes">Save</SubmitButton>
       </form>
       <div className="flex flex-wrap items-center gap-2" aria-label="Upload audio and cover">
         <form
@@ -223,9 +242,17 @@ function AdminSongRow({ song, tags, selectedTagIds, requestUpload, updateSong, d
               </label>
             ))}
           </div>
-          <SubmitButton className="px-3 py-1.5 rounded-md border border-slate-300 hover:bg-slate-50 active:scale-95 transition" pendingText="Saving..." ariaLabel="Save tags">Save tags</SubmitButton>
+          <SubmitButton className="px-3 py-1.5 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-900 active:scale-95 transition dark:border-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100" pendingText="Saving..." ariaLabel="Save tags">Save tags</SubmitButton>
         </form>
-        <UploadForm songId={song.id} />
+        <UploadForm
+          songId={song.id}
+          currentAudioPath={(song as any).audioUrl || null}
+          currentCoverUrl={(song as any).coverUrl || null}
+          // @ts-expect-error drizzle shape
+          currentAudioName={(song as any).audioOriginalName || null}
+          // @ts-expect-error drizzle shape
+          currentCoverName={(song as any).coverOriginalName || null}
+        />
       </div>
       <form
         action={async (fd: FormData) => {

@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import SubmitButton from './SubmitButton';
 import { useToast } from './toast';
 
-export default function UploadForm({ songId }: { songId: string }) {
+export default function UploadForm({ songId, currentAudioPath, currentCoverUrl, currentAudioName, currentCoverName }: { songId: string; currentAudioPath?: string | null; currentCoverUrl?: string | null; currentAudioName?: string | null; currentCoverName?: string | null }) {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -62,17 +62,40 @@ export default function UploadForm({ songId }: { songId: string }) {
   return (
     <div className="flex items-center gap-4 flex-wrap">
       <div className="flex items-center gap-2">
-        <label className="text-xs font-medium text-slate-700">Audio file</label>
+        <label className="text-xs font-medium text-slate-800 dark:text-slate-200">Audio file</label>
         <input className="text-sm" type="file" accept="audio/wav,audio/x-wav,audio/aiff,audio/x-aiff,audio/mpeg,audio/mp4,audio/x-m4a,audio/m4a" onChange={(e) => setAudioFile(e.target.files?.[0] || null)} />
+        <span className="text-xs text-slate-600 dark:text-slate-300">
+          {audioFile?.name
+            ? `Selected: ${audioFile.name}`
+            : currentAudioName
+            ? `Current: ${currentAudioName}`
+            : currentAudioPath
+            ? `Current: ${currentAudioPath.split('/').pop()}`
+            : 'None'}
+        </span>
       </div>
       <div className="flex items-center gap-2">
-        <label className="text-xs font-medium text-slate-700">Cover art</label>
+        <label className="text-xs font-medium text-slate-800 dark:text-slate-200">Cover art</label>
         <input className="text-sm" type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setCoverFile(e.target.files?.[0] || null)} />
+        <span className="text-xs text-slate-600 dark:text-slate-300">
+          {coverFile?.name
+            ? `Selected: ${coverFile.name}`
+            : currentCoverName
+            ? `Current: ${currentCoverName}`
+            : currentCoverUrl
+            ? `Current: ${(() => { try { const u = new URL(currentCoverUrl); const parts = u.pathname.split('/'); return parts[parts.length - 1]; } catch { return currentCoverUrl.split('/').pop(); } })()}`
+            : 'None'}
+        </span>
       </div>
       <button
         onClick={handleUpload}
         disabled={isUploading || (!audioFile && !coverFile)}
-        className={`px-3 py-1.5 rounded-md text-white transition ${isUploading ? 'bg-slate-700' : 'bg-slate-900 hover:bg-slate-800 active:scale-95'} ${(!audioFile && !coverFile) ? 'opacity-60 cursor-not-allowed' : ''}`}
+        className={`px-3 py-1.5 rounded-md border text-white transition
+          ${isUploading
+            ? 'bg-slate-800 dark:bg-slate-700'
+            : 'bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 active:scale-95'}
+          border-slate-300 dark:border-slate-600
+          ${(!audioFile && !coverFile) ? 'opacity-60 cursor-not-allowed' : ''}`}
         aria-label="Upload files"
         aria-busy={isUploading}
       >

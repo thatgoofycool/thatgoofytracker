@@ -11,6 +11,10 @@ import { authOptions } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
+function formatTagName(name: string): string {
+  return name.replace(/_/g, ' ');
+}
+
 async function getData(searchParams: Record<string, string | string[] | undefined>) {
   const params: Record<string, string> = {};
   for (const [k, v] of Object.entries(searchParams)) if (typeof v === 'string') params[k] = v;
@@ -117,7 +121,7 @@ export default async function Page({ searchParams }: { searchParams: Record<stri
       <div className="mt-4 flex flex-wrap gap-2" aria-label="Filter by tag">
         <Link className={`px-2 py-1 rounded-full border ${!searchParams.tag ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-300'}`} href={{ pathname: '/', query: { ...searchParams, tag: '' } }}>All tags</Link>
         {tagsList.map(t => (
-          <Link key={t.id} className={`px-2 py-1 rounded-full border tag-${t.color} ${searchParams.tag === t.slug ? 'ring-2 ring-slate-400' : ''}`} href={{ pathname: '/', query: { ...searchParams, tag: t.slug } }}>{t.name}</Link>
+          <Link key={t.id} className={`px-2 py-1 rounded-full border tag-${t.color} ${searchParams.tag === t.slug ? 'ring-2 ring-slate-400' : ''}`} href={{ pathname: '/', query: { ...searchParams, tag: t.slug } }}>{formatTagName(t.name)}</Link>
         ))}
       </div>
 
@@ -130,7 +134,7 @@ export default async function Page({ searchParams }: { searchParams: Record<stri
                 <p className="text-sm text-slate-600">Status: <span className="font-medium">{song.status}</span></p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {song.tags.map((t) => (
-                    <span key={t.id} className={`text-xs px-2 py-1 rounded-full tag-${t.color}`} aria-label={`tag ${t.name}`}>{t.name}</span>
+                    <span key={t.id} className={`text-xs px-2 py-1 rounded-full tag-${t.color}`} aria-label={`tag ${formatTagName(t.name)}`}>{formatTagName(t.name)}</span>
                   ))}
                 </div>
                 {song.updatedAt ? (

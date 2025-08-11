@@ -145,7 +145,7 @@ export default async function Page({ searchParams }: { searchParams: Record<stri
                 <div className="flex items-center gap-3 justify-end">
                   { (song as any).coverUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={(song as any).coverUrl as string} alt="Cover art" className="w-20 h-20 object-cover rounded" />
+                    <img src={(song as any).coverUrl as string} alt="Cover art" className="w-24 h-24 object-cover rounded" />
                   ) : null }
                   <div className="min-w-0">
                     {song.previewUrl ? (

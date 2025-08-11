@@ -29,11 +29,14 @@ export default function AudioPlayer({ previewUrl, waveform, title }: Props) {
       barGap: 1,
     });
 
+    let loadPromise: Promise<unknown> | null = null;
     if (waveform?.peaks && waveform.peaks.length) {
-      ws.load(previewUrl, [waveform.peaks] as any, waveform.duration || undefined);
+      loadPromise = ws.load(previewUrl, [waveform.peaks] as any, waveform.duration || undefined) as unknown as Promise<unknown>;
     } else {
-      ws.load(previewUrl);
+      loadPromise = ws.load(previewUrl) as unknown as Promise<unknown>;
     }
+    // Ensure aborted loads on teardown do not surface as unhandled rejections
+    loadPromise?.catch(() => {});
 
     // Swallow internal fetch abort errors on teardown
     const onError = (_: unknown) => {};
@@ -56,7 +59,11 @@ export default function AudioPlayer({ previewUrl, waveform, title }: Props) {
         ws.un('play', onPlay);
         ws.un('pause', onPause);
         ws.un('finish', onFinish);
-        ws.destroy();
+        // Guard destroy during React strict-mode double invoke / load aborts
+        // Delay to allow fetch abort to settle
+        setTimeout(() => {
+          try { (ws as any)?.destroy?.(); } catch {}
+        }, 0);
       } catch {}
       wavesurferRef.current = null;
     };

@@ -35,6 +35,10 @@ export default function AudioPlayer({ previewUrl, waveform, title }: Props) {
       ws.load(previewUrl);
     }
 
+    // Swallow internal fetch abort errors on teardown
+    const onError = (_: unknown) => {};
+    ws.on('error', onError as any);
+
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
     const onFinish = () => {
@@ -48,6 +52,7 @@ export default function AudioPlayer({ previewUrl, waveform, title }: Props) {
     wavesurferRef.current = ws;
     return () => {
       try {
+        ws.un('error', onError as any);
         ws.un('play', onPlay);
         ws.un('pause', onPause);
         ws.un('finish', onFinish);

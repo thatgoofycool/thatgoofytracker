@@ -30,8 +30,8 @@ export default function UploadForm({ songId, currentAudioPath, currentCoverUrl, 
         const put = await fetch(data.url, { method: 'PUT', headers: { 'Content-Type': data.contentType, 'x-upsert': 'true' }, body: audioFile });
         if (!put.ok) throw new Error('upload failed');
         didSomething = true;
-        // Trigger preview generation server-side
-        const trig = await fetch('/api/trigger-preview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bucket: data.bucket, path: data.path, size: audioFile.size }) });
+        // Trigger playback processing server-side (Cloud Run worker)
+        const trig = await fetch('/api/trigger-playback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ songId, bucket: data.bucket, path: data.path, size: audioFile.size }) });
         if (!trig.ok) throw new Error('preview trigger failed');
       }
       if (coverFile) {

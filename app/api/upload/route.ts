@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
 
     // Optimistically set fields so the app can reflect immediately
     if (kind === 'audio') {
-      await db.update(songs).set({ audioUrl: objectName, audioOriginalName: fileName, updatedBy: session?.user?.id, updatedAt: new Date() }).where(eq(songs.id, songId));
+      await db.update(songs).set({ audioUrl: objectName, audioOriginalName: fileName, processingStatus: 'pending', updatedBy: session?.user?.id, updatedAt: new Date() }).where(eq(songs.id, songId));
     } else {
       // Build public URL for cover in public bucket
       const base = url.replace(/\/$/, '');

@@ -33,6 +33,7 @@ async function getData(searchParams: Record<string, string | string[] | undefine
     key: songs.key,
     status: songs.status,
     previewUrl: songs.previewUrl,
+    playbackUrl: (songs as any).playbackUrl,
     audioUrl: songs.audioUrl,
     coverUrl: songs.coverUrl,
     waveformJson: songs.waveformJson,
@@ -82,14 +83,14 @@ async function getData(searchParams: Record<string, string | string[] | undefine
       (tagMap[r.songId] ||= []).push({ id: r.tagId, name: r.name, slug: r.slug, color: r.color });
     }
   }
-  // Attach transient signed preview URLs if missing
+  // Attach transient signed original URLs if missing playback/preview
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   let signedMap: Record<string, string | undefined> = {};
   if (supabaseUrl && supabaseKey) {
     const supabase = createClient(supabaseUrl, supabaseKey);
     for (const s of items) {
-      if (!s.previewUrl && s.audioUrl) {
+      if (!((s as any).playbackUrl || s.previewUrl) && s.audioUrl) {
         try {
           // Give originals a slightly longer TTL to reduce intermittent playback failures
           const { data } = await supabase.storage.from('audio-originals').createSignedUrl(s.audioUrl, 600);
@@ -98,7 +99,11 @@ async function getData(searchParams: Record<string, string | string[] | undefine
       }
     }
   }
-  return items.map(s => ({ ...s, previewUrl: s.previewUrl || signedMap[s.id], tags: tagMap[s.id] || [] }));
+  return items.map(s => ({
+    ...s,
+    playerUrl: (s as any).playbackUrl || s.previewUrl || signedMap[s.id],
+    tags: tagMap[s.id] || [],
+  }));
 }
 
 export default async function Page({ searchParams }: { searchParams: Record<string, string | string[] | undefined> }) {
@@ -165,9 +170,9 @@ export default async function Page({ searchParams }: { searchParams: Record<stri
                     <img src={(song as any).coverUrl as string} alt="Cover art" className="w-24 h-24 object-cover rounded" />
                   ) : null }
                   <div className="min-w-0">
-                    {song.previewUrl ? (
+                    { (song as any).playerUrl ? (
                       <Suspense fallback={<div className="h-[64px] w-full bg-slate-100 animate-pulse rounded-md" />}>
-                        <AudioPlayer previewUrl={song.previewUrl || undefined} waveform={song.waveformJson as any} title={song.title} />
+                        <AudioPlayer previewUrl={(song as any).playerUrl || undefined} waveform={song.waveformJson as any} title={song.title} />
                       </Suspense>
                     ) : (
                       <div className="text-sm text-slate-500">No preview available</div>

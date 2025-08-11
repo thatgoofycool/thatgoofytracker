@@ -68,7 +68,7 @@ Copy `.env.example` to `.env.local` and fill:
 ### Uploads
 - Client requests signed upload URL via `POST /api/upload` (auth required: admin/editor)
 - Uploads go to `audio-originals` (private)
-- Storage trigger runs `generate-preview` to create a 30s MP3 and waveform JSON into `audio-previews`, then updates `songs.preview_url` and `songs.waveform_json`
+- Server calls Cloud Run worker via `POST /api/trigger-playback` to normalize originals (quantize >24-bit or float to 16-bit PCM) and create a full-length 128 kbps MP3 playback into `audio-previews`, then updates `songs.playback_url`
 
 ### CORS
 - Restricted to `NEXT_PUBLIC_APP_URL`

@@ -30,6 +30,7 @@ export default async function AdminPage() {
       key: songs.key,
       status: songs.status,
       previewUrl: songs.previewUrl,
+      playbackUrl: (songs as any).playbackUrl,
       audioUrl: songs.audioUrl,
       audioOriginalName: (songs as any).audioOriginalName,
       coverUrl: songs.coverUrl,

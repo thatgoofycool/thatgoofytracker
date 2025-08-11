@@ -13,16 +13,16 @@ html, body {
 }
 
 body {
-  @apply bg-white text-slate-900 antialiased;
+  @apply bg-white text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
 }
 
 /* Tag color utilities derived from tag.color tokens */
-.tag-emerald { @apply bg-emerald-100 text-emerald-700 border border-emerald-200; }
-.tag-violet { @apply bg-violet-100 text-violet-700 border border-violet-200; }
-.tag-cyan { @apply bg-cyan-100 text-cyan-700 border border-cyan-200; }
-.tag-amber { @apply bg-amber-100 text-amber-800 border border-amber-200; }
-.tag-slate { @apply bg-slate-100 text-slate-700 border border-slate-200; }
-.tag-sky { @apply bg-sky-100 text-sky-700 border border-sky-200; }
-.tag-rose { @apply bg-rose-100 text-rose-700 border border-rose-200; }
+.tag-emerald { @apply bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800; }
+.tag-violet { @apply bg-violet-100 text-violet-700 border border-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-800; }
+.tag-cyan { @apply bg-cyan-100 text-cyan-700 border border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-800; }
+.tag-amber { @apply bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800; }
+.tag-slate { @apply bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:text-slate-200 dark:border-slate-700; }
+.tag-sky { @apply bg-sky-100 text-sky-700 border border-sky-200 dark:bg-sky-900/30 dark:text-sky-300 dark:border-sky-800; }
+.tag-rose { @apply bg-rose-100 text-rose-700 border border-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800; }
 
 

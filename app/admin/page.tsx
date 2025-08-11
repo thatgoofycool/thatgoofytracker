@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { songCreateSchema } from '@/lib/validators';
 import Link from 'next/link';
 import AuthButtons from '@/components/AuthButtons';
+import ThemeToggle from '@/components/ThemeToggle';
 import SubmitButton from '@/components/SubmitButton';
 import SlugInput from '@/components/SlugInput';
 import ToastDisplay from '@/components/ToastDisplay';
@@ -120,7 +121,8 @@ export default async function AdminPage() {
       <header className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">Admin</h1>
         <div className="flex items-center gap-3">
-          <Link className="px-3 py-2 rounded-md bg-slate-100 hover:bg-slate-200" href="/">Back</Link>
+          <Link className="px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100" href="/">Back</Link>
+          <ThemeToggle />
           <AuthButtons signedIn={true} />
         </div>
       </header>
@@ -139,16 +141,16 @@ export default async function AdminPage() {
           }}
           className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3"
         >
-          <input name="title" placeholder="Title" required className="rounded-md border border-slate-300 px-3 py-2" />
-          <SlugInput className="rounded-md border border-slate-300 px-3 py-2" />
-          <select name="status" className="rounded-md border border-slate-300 px-3 py-2">
+          <input name="title" placeholder="Title" required className="rounded-md border border-slate-300 px-3 py-2 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700" />
+          <SlugInput className="rounded-md border border-slate-300 px-3 py-2 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700" />
+          <select name="status" className="rounded-md border border-slate-300 px-3 py-2 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700">
             <option value="draft">Draft</option>
             <option value="in_progress">In Progress</option>
             <option value="mixing">Mixing</option>
             <option value="mastering">Mastering</option>
             <option value="done">Done</option>
           </select>
-          <textarea name="description" placeholder="Description" className="rounded-md border border-slate-300 px-3 py-2 sm:col-span-2" />
+          <textarea name="description" placeholder="Description" className="rounded-md border border-slate-300 px-3 py-2 sm:col-span-2 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700" />
           <SubmitButton className="rounded-md bg-slate-900 text-white px-4 py-2 sm:col-span-2 hover:bg-slate-800 active:scale-95 transition">Create</SubmitButton>
         </form>
       </section>
@@ -188,8 +190,8 @@ function AdminSongRow({ song, tags, selectedTagIds, requestUpload, updateSong, d
         className="flex flex-wrap items-center gap-2" aria-label="Update song"
       >
           <input type="hidden" name="id" value={song.id} />
-          <input name="title" defaultValue={song.title} className="rounded-md border border-slate-300 px-2 py-1 text-sm" />
-          <select name="status" defaultValue={song.status} className="rounded-md border border-slate-300 px-2 py-1 text-sm">
+          <input name="title" defaultValue={song.title} className="rounded-md border border-slate-300 px-2 py-1 text-sm bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700" />
+          <select name="status" defaultValue={song.status} className="rounded-md border border-slate-300 px-2 py-1 text-sm bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700">
             <option value="draft">Draft</option>
             <option value="in_progress">In Progress</option>
             <option value="mixing">Mixing</option>

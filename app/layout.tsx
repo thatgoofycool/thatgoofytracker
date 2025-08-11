@@ -1,6 +1,7 @@
 import '../styles/globals.css';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
+import { ThemeProvider } from 'next-themes';
 
 export const metadata: Metadata = {
   title: 'Album Progress Tracker',
@@ -12,8 +13,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const plausibleDomain = process.env.PLAUSIBLE_DOMAIN;
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>
-        {children}
+      <body className="bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          {children}
+        </ThemeProvider>
         {plausibleDomain ? (
           <script defer data-domain={plausibleDomain} src={`https://plausible.io/js/script.js`}></script>
         ) : null}

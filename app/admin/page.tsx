@@ -248,9 +248,7 @@ function AdminSongRow({ song, tags, selectedTagIds, requestUpload, updateSong, d
           songId={song.id}
           currentAudioPath={(song as any).audioUrl || null}
           currentCoverUrl={(song as any).coverUrl || null}
-          // @ts-expect-error drizzle shape
           currentAudioName={(song as any).audioOriginalName || null}
-          // @ts-expect-error drizzle shape
           currentCoverName={(song as any).coverOriginalName || null}
         />
       </div>
